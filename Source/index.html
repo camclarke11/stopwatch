@@ -1,0 +1,277 @@
+<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><style>
+/* FONT */
+/* LIBRARY_CSS */
+:root{color-scheme:light;--digit-size:min(32vw,calc(84vw / var(--clock-units)),40vh);--clock-units:2.9;--digit-cell:.65em;--clock-font:"DynaPuff";--clock-weight:700;--control-size:clamp(13px,1.5vw,20px)}
+*{box-sizing:border-box}
+body{margin:0;background:#151515;color:var(--clock-ink,#fffaf0);font-family:-apple-system,BlinkMacSystemFont,sans-serif;user-select:none;height:100vh;overflow:hidden;display:grid;place-items:center}
+.background{position:fixed;inset:-2%;width:104%;height:104%;object-fit:cover;object-position:center;pointer-events:none;will-change:transform;z-index:0}
+main{position:relative;text-align:center;width:100%;padding:16px;z-index:1}
+.time{width:max-content;max-width:100%;margin-inline:auto;transform:scale(1);transform-origin:center;transition:transform 1.6s cubic-bezier(.22,.61,.36,1);font-family:var(--clock-font),ui-rounded,sans-serif;font-weight:var(--clock-weight);font-variant-numeric:tabular-nums;font-size:var(--digit-size);line-height:1.4;letter-spacing:0;display:flex;align-items:baseline;justify-content:center}
+.time{text-shadow:none;-webkit-text-stroke:0}
+.time [hidden]{display:none!important}
+.time .rn-root{flex:none;width:calc(2 * var(--digit-cell))}
+.time .rn-token{width:var(--digit-cell);text-align:center}
+.sep{flex:none;width:.3em;color:inherit;text-align:center}
+.interface{position:absolute;top:100%;left:0;width:100%;opacity:1;transition:opacity 1.4s ease;}
+body.idle .interface,body.idle .mode-area,body.idle .timer-adjust{opacity:0;pointer-events:none}
+body.idle{cursor:none}
+body.idle .time{transform:scale(var(--idle-scale,1))}
+.controls{display:flex;justify-content:center;gap:clamp(12px,2vw,24px);margin-top:clamp(0px,1vh,12px)}
+button{font:500 var(--control-size) -apple-system,BlinkMacSystemFont,sans-serif;border:1px solid #244b3433;border-radius:8px;height:clamp(36px,5vh,56px);width:clamp(82px,21vw,150px);background:#fffaf0e6;color:#242424;cursor:pointer}
+button.primary{background:#242424ed;color:#fffaf0;border-color:#fffaf066}
+button:hover{filter:brightness(1.1)}button:active{transform:translateY(1px)}button:focus-visible{outline:2px solid #244b34;outline-offset:4px}button:disabled{opacity:.35;cursor:default}
+.hint{color:#fffaf0;text-shadow:0 1px 4px #000,0 0 10px #000;font-size:clamp(11px,1.1vw,14px);margin-top:clamp(10px,2vh,20px);letter-spacing:.1px}
+@media(prefers-reduced-motion:reduce){.interface,.time{transition:none}.background{will-change:auto}}
+@media(max-height:360px){.hint{display:none}.controls{margin-top:0}main{padding:8px}}
+.mode-area{position:fixed;z-index:2;top:14px;left:0;right:0;display:flex;flex-direction:column;align-items:center;gap:8px;opacity:1;transition:opacity 1.4s ease;pointer-events:none}
+.mode-switch{display:flex;padding:4px;border:1px solid #ffffff55;border-radius:14px;background:linear-gradient(135deg,#ffffff40,#ffffff16);-webkit-backdrop-filter:blur(28px) saturate(160%);backdrop-filter:blur(28px) saturate(160%);box-shadow:inset 0 1px 0 #ffffff33,0 6px 24px #00000020;pointer-events:auto}
+.mode-switch button{width:auto;height:29px;padding:0 13px;background:transparent;border:0;color:#fffaf0;font-size:12px;border-radius:10px;text-shadow:0 1px 3px #0006}
+.mode-switch button[aria-pressed=true]{background:#ffffffbb;color:#252823;text-shadow:none;box-shadow:0 1px 4px #0001}
+.session-label{background:#171b18b8;border-radius:6px;padding:4px 9px;color:#fffaf0;font-size:11px;letter-spacing:.2px}
+.session-label[hidden]{display:none}
+body.session-complete .session-label{background:#fffaf0;color:#242424}
+.controls button.primary{min-width:106px}
+@media(max-width:380px){.controls{gap:8px}.controls button{width:82px;font-size:12px}.controls button.primary{min-width:108px}.hint{font-size:10px}}
+@media(max-height:360px){.mode-area{top:8px;gap:4px}.mode-switch button{height:25px}.session-label{font-size:10px;padding:2px 7px}}
+@media(prefers-reduced-motion:reduce){.mode-area{transition:none}}
+.timer-adjust{display:flex;justify-content:center;gap:8px;opacity:1;transition:opacity 1.4s ease}
+.timer-adjust[hidden]{display:none}
+.adjust-rail{display:flex;align-items:center;justify-content:space-between;gap:4px;width:104px;height:38px;padding:3px;border:1px solid #ffffff44;border-radius:999px;background:#22221b66;-webkit-backdrop-filter:blur(18px) saturate(140%);backdrop-filter:blur(18px) saturate(140%);box-shadow:inset 0 1px 0 #ffffff12;color:#fffaf0}
+.adjust-rail span{font-size:10px;font-weight:500;white-space:nowrap}
+.adjust-rail button{display:grid;place-items:center;flex:none;width:30px;height:30px;border:0;border-radius:50%;background:#ffffff18;color:inherit}
+.adjust-rail button:hover{background:#ffffff40}.adjust-rail button:disabled{opacity:.3}
+.adjust-rail svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round}
+body.timer-mode .interface{display:flex;align-items:center;justify-content:center;flex-direction:column;gap:8px;padding-inline:8px}
+body.timer-mode .controls{margin-top:0;gap:8px}
+body.timer-mode .hint{width:100%;margin-top:0}
+@media(max-width:480px){body.timer-mode .timer-adjust{width:100%}}
+@media(max-height:360px){body.timer-mode{--digit-size:min(32vw,calc(84vw / var(--clock-units)),22vh)}body.timer-mode .interface{gap:4px;margin-top:-8px}body.timer-mode .controls button{height:28px}}
+@media(prefers-reduced-motion:reduce){.timer-adjust{transition:none}}
+#toggle,#reset{display:grid;place-items:center;width:clamp(36px,5vh,56px);min-width:clamp(36px,5vh,56px);background:transparent;border:0;box-shadow:none;color:var(--clock-ink,#fffaf0)}
+#toggle:hover,#reset:hover{background:transparent;filter:none;opacity:.75}
+#toggle:focus-visible,#reset:focus-visible{outline:2px solid currentColor;outline-offset:2px}
+#reset svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+#toggle svg{width:20px;height:20px;fill:currentColor;stroke:currentColor;stroke-width:1;stroke-linejoin:round}
+#toggle[data-icon=play] .pause-icon,#toggle[data-icon=pause] .play-icon{display:none}
+@media(max-height:360px){body.timer-mode #toggle,body.timer-mode #reset{width:28px;min-width:28px;height:28px}body.timer-mode #toggle svg,body.timer-mode #reset svg{width:17px;height:17px}}
+
+.session-row{display:flex;align-items:center;gap:6px}
+#settings-cog{display:grid;place-items:center;width:clamp(36px,5vh,56px);height:clamp(36px,5vh,56px);background:transparent;border:0;box-shadow:none;color:var(--clock-ink,#fffaf0)}
+#settings-cog:hover{background:transparent;filter:none;opacity:.75}
+#settings-cog:focus-visible{outline:2px solid currentColor;outline-offset:2px}
+#settings-cog[hidden]{display:none}
+#settings-cog svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
+.settings-pane{color-scheme:dark;width:min(360px,calc(100vw - 24px));max-height:calc(100dvh - 24px);padding:22px;border:1px solid #ffffff40;border-radius:22px;background:linear-gradient(145deg,#323632b8,#171b1bc9);color:#fffaf0;-webkit-backdrop-filter:blur(32px) saturate(140%);backdrop-filter:blur(32px) saturate(140%);box-shadow:0 20px 70px #0005;overflow:auto}
+.settings-pane::backdrop{background:#0003}
+.settings-pane header{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px}
+.settings-pane h2{font-size:18px;font-weight:600;margin:0;letter-spacing:-.3px}
+.settings-pane button{width:auto;height:36px;font-size:12px;border-radius:10px;border:1px solid #ffffff25;background:#ffffff0d;color:inherit}
+.settings-pane button:hover{background:#ffffff22;filter:none}
+.settings-pane button:focus-visible,.settings-pane input:focus-visible{outline:2px solid #fffaf0;outline-offset:3px}
+.settings-pane #settings-close{display:grid;place-items:center;width:28px;height:28px;border:0;background:transparent}
+#settings-close svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round}
+.settings-presets{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:18px}
+.settings-presets button[aria-pressed=true]{background:#fffaf0;color:#252823;border-color:transparent}
+.settings-fields{display:grid;align-items:end;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.settings-fields label{display:flex;flex-direction:column;gap:7px;font-size:11px;color:#fffaf0bf}
+.settings-fields input{width:100%;height:42px;background:#0002;border:1px solid #ffffff30;border-radius:10px;color:#fffaf0;font:500 20px -apple-system,BlinkMacSystemFont,sans-serif;padding:8px;user-select:text}
+.settings-note{font-size:11px;line-height:1.5;color:#fffaf0b3;margin:14px 0 18px}
+.settings-pane #settings-apply{width:100%;background:#fffaf0;color:#252823;border:0;font-weight:600}
+@media(max-height:360px){.settings-pane{padding:14px;border-radius:16px}.settings-pane header{margin-bottom:10px}.settings-presets{margin-bottom:12px}.settings-note{margin:10px 0}.settings-fields input{height:36px}}
+.cat-baseline{display:block;align-self:baseline;flex:none;width:0;height:0;pointer-events:none}
+.pixel-cat{position:fixed;left:0;top:0;z-index:2;pointer-events:auto;cursor:grab;touch-action:none;image-rendering:pixelated;image-rendering:crisp-edges;opacity:.96}
+.pixel-cat[data-dragging=true]{cursor:grabbing}
+</style><img class="background" src="__BACKGROUND_DATA__" alt="" aria-hidden="true"><div class="mode-area"><div class="mode-switch" role="group" aria-label="Timer mode"><button id="mode-stopwatch" aria-pressed="true" title="Switching modes pauses your current timer">Stopwatch</button><button id="mode-pomodoro" aria-pressed="false" title="25-minute focus, 5-minute break">Pomodoro</button><button id="mode-timer" aria-pressed="false" title="Simple countdown timer">Timer</button></div><div class="session-row"><div class="session-label" id="session-label" role="status" aria-live="polite" hidden></div></div></div><main><div class="time" role="timer" aria-label="Elapsed time"><span id="hours" hidden></span><span id="hours-separator" class="sep" hidden>:</span><span id="minutes"></span><span class="sep">:</span><span id="seconds"></span></div><div class="interface"><div class="timer-adjust" id="timer-adjust" hidden><div class="adjust-rail left" role="group" aria-label="Adjust by 5 minutes"><button data-adjust="-5" aria-label="Subtract 5 minutes" title="Subtract 5 minutes"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 12h12"/></svg></button><span>5 min</span><button data-adjust="5" aria-label="Add 5 minutes" title="Add 5 minutes"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 12h12M12 6v12"/></svg></button></div><div class="adjust-rail right" role="group" aria-label="Adjust by 10 minutes"><button data-adjust="-10" aria-label="Subtract 10 minutes" title="Subtract 10 minutes"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 12h12"/></svg></button><span>10 min</span><button data-adjust="10" aria-label="Add 10 minutes" title="Add 10 minutes"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 12h12M12 6v12"/></svg></button></div></div><div class="controls"><button id="toggle" class="primary" aria-label="Start" title="Start" data-icon="play"><svg class="play-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5 18 12 8 18.5Z"/></svg><svg class="pause-icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="6.5" y="5" width="4" height="14" rx="1"/><rect x="13.5" y="5" width="4" height="14" rx="1"/></svg></button><button id="reset" aria-label="Reset" title="Reset" disabled><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 10a8 8 0 1 1 1.5 7M4 4v6h6"/></svg></button><button id="settings-cog" aria-label="Pomodoro settings" title="Pomodoro settings" aria-haspopup="dialog" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 3-.6 2.2-1.6.9-2.2-.6-3 5.2 1.6 1.6v1.8l-1.6 1.6 3 5.2 2.2-.6 1.6.9L9 23h6l.6-2.2 1.6-.9 2.2.6 3-5.2-1.6-1.6v-1.8l1.6-1.6-3-5.2-2.2.6-1.6-.9L15 3Z" transform="translate(1.2 -1.2) scale(.9)"/><circle cx="12" cy="10.5" r="3"/></svg></button></div><div class="hint">Space to start / pause · R to reset</div></div></main><dialog class="settings-pane" id="pomodoro-settings" aria-labelledby="settings-title" aria-describedby="settings-note">
+<form id="settings-form">
+<header><h2 id="settings-title">Pomodoro</h2><button type="button" id="settings-close" aria-label="Close settings" title="Close settings"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"/></svg></button></header>
+<div class="settings-presets" role="group" aria-label="Timing preset"><button type="button" data-preset="25,5,15" aria-pressed="true">25 / 5</button><button type="button" data-preset="50,10,30" aria-pressed="false">50 / 10</button><button type="button" data-preset="custom" aria-pressed="false">Custom</button></div>
+<div class="settings-fields"><label>Focus · min<input id="focus-minutes" type="number" min="1" max="180" step="1" required value="25"></label><label>Break · min<input id="break-minutes" type="number" min="1" max="180" step="1" required value="5"></label><label>Long break · min<input id="long-break-minutes" type="number" min="1" max="180" step="1" required value="15"></label></div>
+<p class="settings-note" id="settings-note">Long break after every 4 focus sessions.<br>New timings start a fresh, paused focus session.</p>
+<button type="submit" id="settings-apply">Apply timings</button>
+</form></dialog><script type="module">
+
+{
+function stationaryDigits(host){
+  host.classList.add('rn-root');
+  let previous='';
+  return {update({value}){
+    const text=String(value).padStart(2,'0');
+    if(text===previous)return;
+    while(host.children.length<text.length){const digit=document.createElement('span');digit.className='rn-token';host.append(digit)}
+    while(host.children.length>text.length)host.lastElementChild.remove();
+    [...host.children].forEach((digit,index)=>{if(digit.textContent!==text[index])digit.textContent=text[index]});
+    previous=text;
+  }};
+}
+const h=stationaryDigits(document.querySelector('#hours')),m=stationaryDigits(document.querySelector('#minutes')),s=stationaryDigits(document.querySelector('#seconds'));
+const send=action=>window.webkit.messageHandlers.stopwatch.postMessage(action);
+const surface=document.querySelector('.interface');
+let idleTimer,sessionComplete=false;
+const settingsPane=document.querySelector('#pomodoro-settings');
+const settingsCog=document.querySelector('#settings-cog');
+const timingFields=['#focus-minutes','#break-minutes','#long-break-minutes'].map(id=>document.querySelector(id));
+const presetButtons=[...document.querySelectorAll('[data-preset]')];
+let savedTimings=[25,5,15];
+function selectPreset(value){presetButtons.forEach(button=>button.setAttribute('aria-pressed',String(button.dataset.preset===value)))}
+settingsCog.onclick=()=>{
+  timingFields.forEach((field,index)=>field.value=savedTimings[index]);
+  const preset=savedTimings.join(',');
+  selectPreset(presetButtons.some(button=>button.dataset.preset===preset)?preset:'custom');
+  settingsPane.showModal();wake();
+};
+function closeSettings(){settingsPane.close();settingsCog.focus();wake()}
+document.querySelector('#settings-close').onclick=closeSettings;
+settingsPane.addEventListener('close',wake);
+settingsPane.addEventListener('click',event=>{if(event.target===settingsPane){const r=settingsPane.getBoundingClientRect();if(event.clientX<r.left||event.clientX>r.right||event.clientY<r.top||event.clientY>r.bottom)closeSettings()}});
+presetButtons.forEach(button=>button.onclick=()=>{
+  const preset=button.dataset.preset;selectPreset(preset);
+  if(preset==='custom'){timingFields[0].focus();timingFields[0].select()}
+  else preset.split(',').forEach((value,index)=>timingFields[index].value=value);
+});
+timingFields.forEach(field=>field.addEventListener('input',()=>selectPreset('custom')));
+document.querySelector('#settings-form').onsubmit=event=>{
+  event.preventDefault();
+  if(!event.target.reportValidity())return;
+  send('pomodoro-settings:'+timingFields.map(field=>field.valueAsNumber).join(','));
+  closeSettings();
+};
+const modeArea=document.querySelector('.mode-area');
+const timerAdjust=document.querySelector('#timer-adjust');
+function wake(){document.body.classList.remove('idle');surface.inert=false;modeArea.inert=false;timerAdjust.inert=false;clearTimeout(idleTimer);idleTimer=setTimeout(()=>{if(sessionComplete||settingsPane.open||document.querySelector('.pixel-cat')?.dataset.dragging==='true')return;document.body.classList.add('idle');surface.inert=true;modeArea.inert=true;timerAdjust.inert=true},3500)}
+for(const event of ['pointermove','pointerdown','click','keydown'])document.addEventListener(event,wake,{capture:true,passive:true});
+wake();
+const background=document.querySelector('.background');
+function adaptClockColour(){
+  if(!background.naturalWidth)return;
+  const canvas=document.createElement('canvas');canvas.width=80;canvas.height=60;
+  const context=canvas.getContext('2d',{willReadFrequently:true});
+  const scale=Math.max(innerWidth/background.naturalWidth,innerHeight/background.naturalHeight);
+  const cropWidth=innerWidth/scale,cropHeight=innerHeight/scale;
+  context.drawImage(background,(background.naturalWidth-cropWidth)/2,(background.naturalHeight-cropHeight)/2,cropWidth,cropHeight,0,0,80,60);
+  const pixels=context.getImageData(8,10,64,40).data;
+  let lightScore=0,darkScore=0;
+  const linear=v=>{v/=255;return v<=.04045?v/12.92:((v+.055)/1.055)**2.4};
+  for(let i=0;i<pixels.length;i+=4){
+    const luminance=.2126*linear(pixels[i])+.7152*linear(pixels[i+1])+.0722*linear(pixels[i+2]);
+    lightScore+=Math.min(7,1.0/(luminance+.05));
+    darkScore+=Math.min(7,(luminance+.05)/.055);
+  }
+  const light=lightScore>=darkScore,style=document.documentElement.style;
+  style.setProperty('--clock-ink',light?'#fffaf0':'#111713');
+  style.setProperty('--clock-card',light?'rgba(0,0,0,.035)':'rgba(255,255,255,.035)');
+  style.setProperty('--clock-line',light?'rgba(255,255,255,.12)':'rgba(0,0,0,.12)');
+}
+background.addEventListener('load',adaptClockColour);
+adaptClockColour();
+let contrastResize;
+window.addEventListener('resize',()=>{clearTimeout(contrastResize);contrastResize=setTimeout(adaptClockColour,150)});
+const reduced=matchMedia('(prefers-reduced-motion: reduce)');
+let phase=0,speed=1,fromSpeed=1,targetSpeed=1,transitionAt=performance.now(),previous=performance.now(),frame=0,lastRunning=null;
+function drift(now){
+  frame=0;
+  const progress=Math.min(1,(now-transitionAt)/6000);
+  const eased=progress*progress*(3-2*progress);
+  speed=fromSpeed+(targetSpeed-fromSpeed)*eased;
+  phase+=Math.min((now-previous)/1000,.1)*speed;previous=now;
+  background.style.transform=`translate(${Math.sin(phase/10)*.7}%,${Math.sin(phase/13)*.5}%) scale(${1.01+Math.sin(phase/11)*.005})`;
+  if(!reduced.matches&&(speed!==0||targetSpeed!==0))frame=requestAnimationFrame(drift);
+}
+function motion(running){
+  if(lastRunning===running)return;
+  lastRunning=running;fromSpeed=speed;targetSpeed=running?0:1;transitionAt=performance.now();
+  if(!frame&&!reduced.matches){previous=performance.now();frame=requestAnimationFrame(drift)}
+}
+reduced.addEventListener('change',()=>{cancelAnimationFrame(frame);frame=0;if(!reduced.matches){previous=performance.now();frame=requestAnimationFrame(drift)}});
+let shownSecond=-1,digitCell=.65;
+function layoutHours(total){
+  const hours=Math.floor(Math.max(0,total)/3600),visible=hours>0;
+  const hourDigits=Math.max(2,String(hours).length);
+  const host=document.querySelector('#hours');
+  const changed=host.hidden===visible;
+  host.hidden=!visible;document.querySelector('#hours-separator').hidden=!visible;
+  host.style.width=`${hourDigits*digitCell}em`;
+  document.documentElement.style.setProperty('--clock-units',(visible?hourDigits+4:4)*digitCell+(visible?.6:.3));
+  if(changed)requestAnimationFrame(()=>{fitIdleClock()});
+}
+function setText(selector,text){const element=document.querySelector(selector);if(element.textContent!==text)element.textContent=text}
+window.render=state=>{
+  const {mode,phase,running,elapsed,completed,completedFocusCount,focusNumber}=state;
+  savedTimings=[state.focusMinutes,state.breakMinutes,state.longBreakMinutes];
+  const pomodoro=mode==='pomodoro',countdown=mode==='timer';
+  settingsCog.hidden=!pomodoro;
+  if(!pomodoro&&settingsPane.open)settingsPane.close();
+  document.querySelector('#mode-pomodoro').title=`${state.focusMinutes}-minute focus, ${state.breakMinutes}-minute break`;
+  document.body.classList.toggle('timer-mode',countdown);
+  timerAdjust.hidden=!countdown;
+  const wasComplete=sessionComplete;sessionComplete=completed;
+  document.body.classList.toggle('session-complete',completed);
+  if(completed&&!wasComplete)wake();
+  motion(running);
+  const total=Math.max(0,Math.floor(state.seconds));
+  if(total!==shownSecond){
+    const hours=Math.floor(total/3600),minutes=Math.floor(total/60)%60,seconds=total%60;
+    layoutHours(total);
+    h.update({value:hours});m.update({value:minutes});s.update({value:seconds});
+    shownSecond=total;
+  }
+  document.querySelector('.time').setAttribute('aria-label',`${mode!=='stopwatch'?'Time remaining':'Elapsed time'}: ${Math.floor(total/3600)} hours ${Math.floor(total/60)%60} minutes ${total%60} seconds`);
+  let action=running?'Pause':elapsed>0?'Resume':'Start';
+  if(pomodoro){
+    if(completed)action=phase==='focus'?'Start break':'Start focus';
+    else if(!running&&elapsed===0)action=phase==='focus'?'Start focus':'Start break';
+  }
+  if(countdown&&completed)action='Restart';
+  if(countdown&&!state.canStart)action='Set time';
+  document.querySelector('#toggle').disabled=state.canStart===false;
+  const toggle=document.querySelector('#toggle');
+  toggle.setAttribute('aria-label',action);toggle.title=action;
+  toggle.dataset.icon=running?'pause':'play';
+  timerAdjust.querySelectorAll('button').forEach(button=>{button.disabled=Number(button.dataset.adjust)<0?state.timerDuration===0:state.timerDuration>=86400});
+  document.querySelector('#reset').disabled=elapsed===0&&!running;
+  document.querySelector('#mode-stopwatch').setAttribute('aria-pressed',String(mode==='stopwatch'));
+  document.querySelector('#mode-pomodoro').setAttribute('aria-pressed',String(pomodoro));
+  document.querySelector('#mode-timer').setAttribute('aria-pressed',String(countdown));
+  const label=document.querySelector('#session-label');label.hidden=!pomodoro&&!(countdown&&completed);
+  if(countdown&&completed)setText('#session-label','Timer finished');
+  if(pomodoro){
+    let message=phase==='focus'?`Focus · ${focusNumber} of 4`:phase==='longBreak'?`Long break · ${state.longBreakMinutes} minutes`:`Break · ${state.breakMinutes} minutes`;
+    if(completed)message=phase==='focus'?`Focus complete · ${completedFocusCount%4===0?state.longBreakMinutes:state.breakMinutes}-minute break next`:'Break complete · ready to focus';
+    else if(!running&&elapsed>0)message+=' · paused';
+    setText('#session-label',message);
+  }
+  setText('.hint',countdown?'＋ / − for 1 min · Space to start / pause':pomodoro&&!running&&elapsed===0?`${state.focusMinutes} min focus · ${state.breakMinutes} min break · long break after 4`:'Space to start / pause · R to reset');
+};
+document.querySelector('#mode-stopwatch').onclick=()=>send('mode:stopwatch');
+document.querySelector('#mode-pomodoro').onclick=()=>send('mode:pomodoro');
+document.querySelector('#mode-timer').onclick=()=>send('mode:timer');
+timerAdjust.querySelectorAll('button').forEach(button=>button.onclick=()=>send('adjust:'+button.dataset.adjust));
+document.querySelector('#toggle').onclick=()=>send('toggle');document.querySelector('#reset').onclick=()=>send('reset');document.addEventListener('keydown',e=>{
+  if(settingsPane.open)return;
+  if(e.repeat||e.metaKey||e.ctrlKey||e.altKey||e.target.closest('input,textarea,select,[contenteditable=true]'))return;
+  if(e.code==='Space'){e.preventDefault();send('toggle')}
+  else if(e.key.toLowerCase()==='r'){e.preventDefault();send('reset')}
+  else if(document.body.classList.contains('timer-mode')){
+    // Accept the unshifted +/= key as well as plus and numeric keypad keys.
+    if(e.key==='+'||e.key==='='||e.code==='NumpadAdd'){e.preventDefault();send('adjust:1')}
+    else if(e.key==='-'||e.code==='NumpadSubtract'){e.preventDefault();send('adjust:-1')}
+  }
+});await document.fonts.ready;
+const clockElement=document.querySelector('.time');
+function fitIdleClock(){
+  const width=clockElement.offsetWidth,height=clockElement.offsetHeight;
+  if(width&&height)clockElement.style.setProperty('--idle-scale',Math.max(1,Math.min(innerWidth*.96/width,innerHeight*.90/height)));
+}
+new ResizeObserver(fitIdleClock).observe(clockElement);
+let resizeFrame;
+const refresh=()=>{cancelAnimationFrame(resizeFrame);resizeFrame=requestAnimationFrame(()=>{fitIdleClock()})};
+new ResizeObserver(refresh).observe(document.body);
+await document.fonts.load('700 80px "DynaPuff"','0123456789:');
+const fontCanvas=document.createElement('canvas'),fontContext=fontCanvas.getContext('2d');
+fontContext.font='700 100px "DynaPuff"';
+digitCell=Math.max(...Array.from('0123456789',digit=>fontContext.measureText(digit).width))/100+.035;
+document.documentElement.style.setProperty('--digit-cell',`${digitCell}em`);
+layoutHours(shownSecond);
+refresh();send('ready');
+}
+/* PIXEL_CAT */
+</script></html>
