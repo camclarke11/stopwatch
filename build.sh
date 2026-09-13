@@ -4,7 +4,7 @@ cd "${0:A:h}"
 version=$(cat VERSION)
 [[ "$version" =~ '^[0-9]+\.[0-9]+\.[0-9]+$' ]] || { print -u2 'Invalid VERSION'; exit 1; }
 mkdir -p Stopwatch.app/Contents/MacOS Stopwatch.app/Contents/Resources
-xcrun swiftc Source/main.swift Source/TimerState.swift Source/GitUpdater.swift -o Stopwatch.app/Contents/MacOS/Stopwatch -framework Cocoa -framework WebKit -framework CoreText -module-cache-path /tmp/stopwatch-module-cache
+./Scripts/swiftc.sh Source/main.swift Source/TimerState.swift Source/GitUpdater.swift -o Stopwatch.app/Contents/MacOS/Stopwatch -framework Cocoa -framework WebKit -framework CoreText
 cp Source/index.html Source/pixel-cat.js Source/rolling.js Source/rolling.css Source/ROLLING-LICENSE Source/fonts.css Source/flap-font.css Stopwatch.app/Contents/Resources/
 cp -R Source/Fonts Source/Backgrounds Stopwatch.app/Contents/Resources/
 cp Scripts/git-update.sh Scripts/replace-app.sh Stopwatch.app/Contents/Resources/

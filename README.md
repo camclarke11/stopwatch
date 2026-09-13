@@ -32,6 +32,19 @@ The app opens and is installed in **your home folder → Applications → Stopwa
 
 No Apple Developer membership or App Store account is needed for this local source build. The app is locally signed, not notarized for general binary distribution.
 
+## If installation reports “SDK is not supported by the compiler”
+
+This means the installed Apple compiler and SDK do not match. The build now checks compatibility and tries other SDKs already installed with the selected developer tools. It does not change your system settings.
+
+From the existing `stopwatch` folder, run:
+
+```sh
+git pull --ff-only
+./install.sh
+```
+
+Do not clone again from inside that folder. If the build says no compatible SDK was found, open **System Settings → General → Software Update** and install the Command Line Tools update. If none is offered, install a matching Command Line Tools package from [Apple Downloads](https://developer.apple.com/download/all/), then retry `./install.sh`.
+
 ## Updates
 
 The app checks for new stable version tags after launch and every six hours while open. You can also choose **Stopwatch → Check for Updates…** from the Mac menu bar.
