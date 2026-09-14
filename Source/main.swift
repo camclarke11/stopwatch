@@ -12,6 +12,25 @@ final class App: NSObject, NSApplicationDelegate, WKScriptMessageHandler, WKNavi
     let updater = GitUpdater()
     var ready = false
     var completionSound: NSSound?
+    var backgrounds: [URL] = []
+    var backgroundIndex = 0
+    func backgroundURI(_ url: URL) -> String? {
+        guard let data = try? Data(contentsOf: url) else { return nil }
+        let mime = url.pathExtension.lowercased() == "png" ? "image/png" : url.pathExtension.lowercased() == "webp" ? "image/webp" : "image/jpeg"
+        return "data:\(mime);base64," + data.base64EncodedString()
+    }
+    func nextBackground() {
+        guard backgrounds.count > 1 else { return }
+        for offset in 1..<backgrounds.count {
+            let candidate = (backgroundIndex + offset) % backgrounds.count
+            guard let uri = backgroundURI(backgrounds[candidate]),
+                  let data = try? JSONSerialization.data(withJSONObject: [uri]),
+                  let json = String(data: data, encoding: .utf8) else { continue }
+            backgroundIndex = candidate
+            web.evaluateJavaScript("window.changeBackground(\(json)[0]);", completionHandler: nil)
+            return
+        }
+    }
     func now() -> Double {
         let d = origin.duration(to: clock.now).components
         return Double(d.seconds) + Double(d.attoseconds) / 1e18
@@ -80,9 +99,12 @@ final class App: NSObject, NSApplicationDelegate, WKScriptMessageHandler, WKNavi
         NSApp.activate(ignoringOtherApps: true)
         let resources = Bundle.main.resourceURL!
         var html = try! String(contentsOf: resources.appendingPathComponent("index.html"), encoding: .utf8)
-        let backgroundNumber = Int.random(in: 1...7)
-        let backgroundData = try! Data(contentsOf: resources.appendingPathComponent("Backgrounds/background\(backgroundNumber).png"))
-        html = html.replacingOccurrences(of: "__BACKGROUND_DATA__", with: "data:image/png;base64," + backgroundData.base64EncodedString())
+        backgrounds = ((try? FileManager.default.contentsOfDirectory(at: resources.appendingPathComponent("Backgrounds"), includingPropertiesForKeys: nil)) ?? [])
+            .filter { ["png", "jpg", "jpeg", "webp"].contains($0.pathExtension.lowercased()) }
+            .sorted { $0.lastPathComponent.localizedStandardCompare($1.lastPathComponent) == .orderedAscending }
+        backgroundIndex = backgrounds.indices.randomElement() ?? 0
+        let initialBackground = backgrounds.isEmpty ? "" : backgroundURI(backgrounds[backgroundIndex]) ?? ""
+        html = html.replacingOccurrences(of: "__BACKGROUND_DATA__", with: initialBackground)
         let fontCSS = try! String(contentsOf: resources.appendingPathComponent("fonts.css"), encoding: .utf8)
         html = html.replacingOccurrences(of: "/* FONT */", with: fontCSS + (try! String(contentsOf: resources.appendingPathComponent("flap-font.css"), encoding: .utf8)))
         let css = try! String(contentsOf: resources.appendingPathComponent("rolling.css"), encoding: .utf8)
@@ -94,6 +116,7 @@ final class App: NSObject, NSApplicationDelegate, WKScriptMessageHandler, WKNavi
     }
     func userContentController(_ userContentController: WKUserContentController, didReceive message: WKScriptMessage) {
         guard let action = message.body as? String else { return }
+        if action == "background:next" { nextBackground(); return }
         if action == "ready" { ready = true }
         else {
             if state.handle(action, at: now()) { signalCompletion() }

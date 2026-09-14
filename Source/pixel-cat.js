@@ -12,6 +12,52 @@
   canvas.setAttribute('aria-hidden', 'true');
   canvas.title = 'Pick me up and drop me somewhere';
   document.body.append(canvas);
+  const bubble = document.createElement('div');
+  bubble.className = 'cat-bubble';
+  bubble.hidden = true;
+  bubble.setAttribute('role', 'note');
+  document.body.append(bubble);
+  const bubbleStyle = document.createElement('style');
+  bubbleStyle.textContent = `
+    .cat-bubble{position:fixed;left:0;top:0;z-index:5;pointer-events:none;width:156px;min-height:44px;padding:9px 11px;text-align:center;
+      font:600 12px/1.35 -apple-system,BlinkMacSystemFont,sans-serif;
+      display:grid;place-items:center;background:#fffaf0;color:#493a32;border:2px solid #493a32;
+      border-radius:9px;box-sizing:border-box}
+    .cat-bubble[hidden]{display:none}
+    .cat-bubble::after{content:'';position:absolute;left:var(--tail-x,36px);bottom:-6px;width:8px;height:8px;
+      background:#fffaf0;border-right:2px solid #493a32;border-bottom:2px solid #493a32;transform:rotate(45deg)}
+    .cat-bubble.below::after{bottom:auto;top:-6px;transform:rotate(225deg)}
+  `;
+  document.head.append(bubbleStyle);
+  const nudges = [
+    'You’ve got this.',
+    'One little step at a time.',
+    'Keep going. I’m rooting for you.',
+    'Future you says thanks.',
+    'Caught you wandering.',
+    'Less mouse, more focus.',
+    'Ahem. Back to it?',
+    'The tabs can wait.',
+    'I nap. You work. Deal?',
+    'Paws off the distractions.',
+    'Just a little more focus.',
+    'Your tiny supervisor is watching.'
+  ];
+  let nudgeUntil=0, nextNudge=0, lastNudge=-1;
+  const runningStopwatch = () => document.querySelector('#toggle').dataset.icon === 'pause' &&
+    document.querySelector('#mode-stopwatch').getAttribute('aria-pressed') === 'true';
+  function hideNudge() { bubble.hidden=true; nudgeUntil=0; }
+  window.addEventListener('cat:focus-nudge', () => {
+    const now=performance.now();
+    if(now<nextNudge||drag||settings.open||document.hidden||!runningStopwatch())return;
+    const choices=nudges.map((_,index)=>index).filter(index=>index!==lastNudge);
+    lastNudge=choices[Math.floor(Math.random()*choices.length)];
+    bubble.textContent=nudges[lastNudge];
+    bubble.hidden=false;nudgeUntil=now+4200;nextNudge=now+45000;
+    refresh();
+  });
+  new MutationObserver(() => { if(!runningStopwatch())hideNudge(); }).observe(document.querySelector('#toggle'), {attributes:true,attributeFilter:['data-icon']});
+  new MutationObserver(() => { if(!runningStopwatch())hideNudge(); }).observe(document.querySelector('#mode-stopwatch'), {attributes:true,attributeFilter:['aria-pressed']});
   const ctx = canvas.getContext('2d');
   ctx.imageSmoothingEnabled = false;
   const measure = document.createElement('canvas').getContext('2d');
@@ -258,6 +304,18 @@
     const x = Math.round(clamp(position.x - 16 * scale, 4, innerWidth - 32 * scale - 4));
     const y = Math.round(clamp(position.y - 26 * scale, 4, innerHeight - 28 * scale - 4));
     displayedPosition = { x:x + 16 * scale, y:y + 26 * scale };
+    if(!bubble.hidden){
+      if(performance.now()>=nudgeUntil||document.hidden||settings.open||drag)hideNudge();
+      else {
+        const width=bubble.offsetWidth||156, height=bubble.offsetHeight||52;
+        const left=clamp(displayedPosition.x-width/2,6,innerWidth-width-6);
+        const below=y<height+15;
+        const top=clamp(below?y+28*scale+9:y-height-9,6,innerHeight-height-6);
+        bubble.classList.toggle('below',below);
+        bubble.style.setProperty('--tail-x',`${clamp(displayedPosition.x-left-5,10,width-16)}px`);
+        bubble.style.transform=`translate(${Math.round(left)}px,${Math.round(top)}px)`;
+      }
+    }
     const transform = `translate(${x}px,${y}px)`;
     if (transform !== lastTransform) { canvas.style.transform = transform; lastTransform = transform; }
     canvas.dataset.pose = sprite;
@@ -300,6 +358,7 @@
   canvas.addEventListener('pointerdown', event => {
     if (event.button !== 0 || event.isPrimary === false || settings.open || drag) return;
     event.preventDefault();
+    hideNudge();
     readGeometry();
     const rect = canvas.getBoundingClientRect();
     drag = { pointerId:event.pointerId, grabX:(event.clientX - rect.left) / rect.width, grabY:(event.clientY - rect.top) / rect.height, position:displayedPosition || point(anchor) };
@@ -315,7 +374,7 @@
   canvas.addEventListener('pointercancel', () => finishDrag(true));
   canvas.addEventListener('lostpointercapture', () => finishDrag(true));
   canvas.addEventListener('click', event => { event.preventDefault(); event.stopPropagation(); });
-  window.addEventListener('blur', () => finishDrag(true));
+  window.addEventListener('blur', () => { hideNudge();finishDrag(true); });
 
   function refresh() {
     followUntil = performance.now() + 1850;
