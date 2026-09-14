@@ -1,5 +1,13 @@
 # Releases
 
+## 1.0.3
+
+- Expand the cat’s reminders to 48 encouraging and playful lines.
+
+- Show a visible update window with a spinner, build/install stage and elapsed time.
+- Keep a local diagnostic log available through Show details.
+- Confirm the installed version after restarting.
+
 ## 1.0.2
 
 - Switch wallpapers using the small picture button beside Reset. Clock colour adapts automatically.
