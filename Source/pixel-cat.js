@@ -80,20 +80,19 @@
     'I’m supervising very quietly.'
   ];
   let nudgeUntil=0, nextNudge=0, lastNudge=-1;
-  const runningStopwatch = () => document.querySelector('#toggle').dataset.icon === 'pause' &&
-    document.querySelector('#mode-stopwatch').getAttribute('aria-pressed') === 'true';
+  // Set by the page while a stopwatch or a Pomodoro focus session is running.
+  const focusing = () => document.body.dataset.focusing === 'true';
   function hideNudge() { bubble.hidden=true; nudgeUntil=0; }
   window.addEventListener('cat:focus-nudge', () => {
     const now=performance.now();
-    if(now<nextNudge||drag||settings.open||document.hidden||!runningStopwatch())return;
+    if(now<nextNudge||drag||settings.open||document.hidden||!focusing())return;
     const choices=nudges.map((_,index)=>index).filter(index=>index!==lastNudge);
     lastNudge=choices[Math.floor(Math.random()*choices.length)];
     bubble.textContent=nudges[lastNudge];
     bubble.hidden=false;nudgeUntil=now+4200;nextNudge=now+45000;
     refresh();
   });
-  new MutationObserver(() => { if(!runningStopwatch())hideNudge(); }).observe(document.querySelector('#toggle'), {attributes:true,attributeFilter:['data-icon']});
-  new MutationObserver(() => { if(!runningStopwatch())hideNudge(); }).observe(document.querySelector('#mode-stopwatch'), {attributes:true,attributeFilter:['aria-pressed']});
+  new MutationObserver(() => { if(!focusing())hideNudge(); }).observe(document.body, {attributes:true,attributeFilter:['data-focusing']});
   const ctx = canvas.getContext('2d');
   ctx.imageSmoothingEnabled = false;
   const measure = document.createElement('canvas').getContext('2d');

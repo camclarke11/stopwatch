@@ -1,5 +1,11 @@
 # Releases
 
+## 1.0.4
+
+- Add a pixel cat app icon for the Dock, Finder and app switcher.
+- The cat’s reminders now also appear during Pomodoro focus sessions (not during breaks).
+- The play, reset, wallpaper and settings buttons sit on a frosted glass bar, like the mode switcher, so they stay visible on every wallpaper.
+
 ## 1.0.3
 
 - Expand the cat’s reminders to 48 encouraging and playful lines.

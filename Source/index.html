@@ -16,7 +16,7 @@ main{position:relative;text-align:center;width:100%;padding:16px;z-index:1}
 body.idle .interface,body.idle .mode-area,body.idle .timer-adjust{opacity:0;pointer-events:none}
 body.idle{cursor:none}
 body.idle .time{transform:scale(var(--idle-scale,1))}
-.controls{display:flex;justify-content:center;gap:clamp(12px,2vw,24px);margin-top:clamp(0px,1vh,12px)}
+.controls{display:flex;justify-content:center;gap:4px;width:max-content;margin:clamp(0px,1vh,12px) auto 0;padding:3px 6px;border:1px solid #ffffff55;border-radius:14px;background:linear-gradient(135deg,#ffffff40,#ffffff16);-webkit-backdrop-filter:blur(28px) saturate(160%);backdrop-filter:blur(28px) saturate(160%);box-shadow:inset 0 1px 0 #ffffff33,0 6px 24px #00000020}
 button{font:500 var(--control-size) -apple-system,BlinkMacSystemFont,sans-serif;border:1px solid #244b3433;border-radius:8px;height:clamp(36px,5vh,56px);width:clamp(82px,21vw,150px);background:#fffaf0e6;color:#242424;cursor:pointer}
 button.primary{background:#242424ed;color:#fffaf0;border-color:#fffaf066}
 button:hover{filter:brightness(1.1)}button:active{transform:translateY(1px)}button:focus-visible{outline:2px solid #244b34;outline-offset:4px}button:disabled{opacity:.35;cursor:default}
@@ -31,7 +31,7 @@ button:hover{filter:brightness(1.1)}button:active{transform:translateY(1px)}butt
 .session-label[hidden]{display:none}
 body.session-complete .session-label{background:#fffaf0;color:#242424}
 .controls button.primary{min-width:106px}
-@media(max-width:380px){.controls{gap:8px}.controls button{width:82px;font-size:12px}.controls button.primary{min-width:108px}.hint{font-size:10px}}
+@media(max-width:380px){.controls button{width:82px;font-size:12px}.controls button.primary{min-width:108px}.hint{font-size:10px}}
 @media(max-height:360px){.mode-area{top:8px;gap:4px}.mode-switch button{height:25px}.session-label{font-size:10px;padding:2px 7px}}
 @media(prefers-reduced-motion:reduce){.mode-area{transition:none}}
 .timer-adjust{display:flex;justify-content:center;gap:8px;opacity:1;transition:opacity 1.4s ease}
@@ -42,13 +42,13 @@ body.session-complete .session-label{background:#fffaf0;color:#242424}
 .adjust-rail button:hover{background:#ffffff40}.adjust-rail button:disabled{opacity:.3}
 .adjust-rail svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round}
 body.timer-mode .interface{display:flex;align-items:center;justify-content:center;flex-direction:column;gap:8px;padding-inline:8px}
-body.timer-mode .controls{margin-top:0;gap:8px}
+body.timer-mode .controls{margin-top:0}
 body.timer-mode .hint{width:100%;margin-top:0}
 @media(max-width:480px){body.timer-mode .timer-adjust{width:100%}}
 @media(max-height:360px){body.timer-mode{--digit-size:min(32vw,calc(84vw / var(--clock-units)),22vh)}body.timer-mode .interface{gap:4px;margin-top:-8px}body.timer-mode .controls button{height:28px}}
 @media(prefers-reduced-motion:reduce){.timer-adjust{transition:none}}
-#toggle,#reset{display:grid;place-items:center;width:clamp(36px,5vh,56px);min-width:clamp(36px,5vh,56px);background:transparent;border:0;box-shadow:none;color:var(--clock-ink,#fffaf0)}
-#toggle:hover,#reset:hover{background:transparent;filter:none;opacity:.75}
+#toggle,#reset{display:grid;place-items:center;width:clamp(44px,6.5vh,68px);min-width:clamp(44px,6.5vh,68px);height:clamp(30px,4vh,44px);background:transparent;border:0;border-radius:10px;box-shadow:none;color:var(--clock-ink,#fffaf0)}
+#toggle:hover:not(:disabled),#reset:hover:not(:disabled){background:#ffffff30;filter:none}
 #toggle:focus-visible,#reset:focus-visible{outline:2px solid currentColor;outline-offset:2px}
 #reset svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
 #toggle svg{width:20px;height:20px;fill:currentColor;stroke:currentColor;stroke-width:1;stroke-linejoin:round}
@@ -56,8 +56,8 @@ body.timer-mode .hint{width:100%;margin-top:0}
 @media(max-height:360px){body.timer-mode #toggle,body.timer-mode #reset{width:28px;min-width:28px;height:28px}body.timer-mode #toggle svg,body.timer-mode #reset svg{width:17px;height:17px}}
 
 .session-row{display:flex;align-items:center;gap:6px}
-#background-next,#settings-cog{display:grid;place-items:center;width:clamp(36px,5vh,56px);height:clamp(36px,5vh,56px);background:transparent;border:0;box-shadow:none;color:var(--clock-ink,#fffaf0)}
-#background-next:hover,#settings-cog:hover{background:transparent;filter:none;opacity:.75}
+#background-next,#settings-cog{display:grid;place-items:center;width:clamp(44px,6.5vh,68px);height:clamp(30px,4vh,44px);background:transparent;border:0;border-radius:10px;box-shadow:none;color:var(--clock-ink,#fffaf0)}
+#background-next:hover,#settings-cog:hover{background:#ffffff30;filter:none}
 #background-next:focus-visible,#settings-cog:focus-visible{outline:2px solid currentColor;outline-offset:2px}
 #settings-cog[hidden]{display:none}
 #background-next svg,#settings-cog svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
@@ -140,8 +140,7 @@ const timerAdjust=document.querySelector('#timer-adjust');
 function wake(event){
   const returning=document.body.classList.contains('idle');
   if(returning&&event?.type==='pointermove'&&!event.buttons&&!event.target.closest('button,.pixel-cat,dialog')&&
-     document.querySelector('#mode-stopwatch').getAttribute('aria-pressed')==='true'&&
-     document.querySelector('#toggle').dataset.icon==='pause'&&!settingsPane.open&&!document.hidden){
+     document.body.dataset.focusing==='true'&&!settingsPane.open&&!document.hidden){
     window.dispatchEvent(new Event('cat:focus-nudge'));
   }
   document.body.classList.remove('idle');surface.inert=false;modeArea.inert=false;timerAdjust.inert=false;clearTimeout(idleTimer);idleTimer=setTimeout(()=>{if(sessionComplete||settingsPane.open||document.querySelector('.pixel-cat')?.dataset.dragging==='true')return;document.body.classList.add('idle');surface.inert=true;modeArea.inert=true;timerAdjust.inert=true},3500)}
@@ -226,6 +225,8 @@ window.render=state=>{
   document.body.classList.toggle('session-complete',completed);
   if(completed&&!wasComplete)wake();
   motion(running);
+  // Cat reminders are for focus time: a running stopwatch or Pomodoro focus session, never a break.
+  document.body.dataset.focusing=String(running&&(mode==='stopwatch'||pomodoro&&phase==='focus'));
   const total=Math.max(0,Math.floor(state.seconds));
   if(total!==shownSecond){
     const hours=Math.floor(total/3600),minutes=Math.floor(total/60)%60,seconds=total%60;
