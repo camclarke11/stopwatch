@@ -25,7 +25,7 @@ button:hover{filter:brightness(1.1)}button:active{transform:translateY(1px)}butt
 @media(max-height:360px){.hint{display:none}.controls{margin-top:0}main{padding:8px}}
 .mode-area{position:fixed;z-index:2;top:14px;left:0;right:0;display:flex;flex-direction:column;align-items:center;gap:8px;opacity:1;transition:opacity 1.4s ease;pointer-events:none}
 .mode-switch{display:flex;padding:4px;border:1px solid #ffffff55;border-radius:14px;background:linear-gradient(135deg,#ffffff40,#ffffff16);-webkit-backdrop-filter:blur(28px) saturate(160%);backdrop-filter:blur(28px) saturate(160%);box-shadow:inset 0 1px 0 #ffffff33,0 6px 24px #00000020;pointer-events:auto}
-.mode-switch button{width:auto;height:29px;padding:0 13px;background:transparent;border:0;color:#fffaf0;font-size:12px;border-radius:10px;text-shadow:0 1px 3px #0006}
+.mode-switch button{width:auto;height:29px;padding:0 13px;background:transparent;border:0;color:var(--clock-ink,#fffaf0);font-size:12px;border-radius:10px;text-shadow:var(--clock-shadow,0 1px 3px #0006)}
 .mode-switch button[aria-pressed=true]{background:#ffffffbb;color:#252823;text-shadow:none;box-shadow:0 1px 4px #0001}
 .session-label{background:#171b18b8;border-radius:6px;padding:4px 9px;color:#fffaf0;font-size:11px;letter-spacing:.2px}
 .session-label[hidden]{display:none}
@@ -186,6 +186,7 @@ function adaptClockColour(image=background){
   }
   const light=lightScore>=darkScore,style=document.documentElement.style;
   style.setProperty('--clock-ink',light?'#fffaf0':'#111713');
+  style.setProperty('--clock-shadow',light?'0 1px 3px #0006':'none');
   style.setProperty('--clock-card',light?'rgba(0,0,0,.035)':'rgba(255,255,255,.035)');
   style.setProperty('--clock-line',light?'rgba(255,255,255,.12)':'rgba(0,0,0,.12)');
 }
