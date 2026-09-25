@@ -79,20 +79,36 @@
     'The nap department is fully staffed.',
     'I’m supervising very quietly.'
   ];
-  let nudgeUntil=0, nextNudge=0, lastNudge=-1;
-  // Set by the page while a stopwatch or a Pomodoro focus session is running.
-  const focusing = () => document.body.dataset.focusing === 'true';
+  // Pomodoro breaks get gentler lines: the point of a break is to wander.
+  const breakNudges = [
+    'Break time. Stretch those paws.',
+    'Rest your eyes. I’ll keep watch.',
+    'Have a sip of water.',
+    'Good work. Enjoy the pause.',
+    'Stretch like a cat. Trust me.',
+    'Look at something far away.',
+    'Breaks count as progress too.',
+    'The nap department is now open.',
+    'Shoulders down. Deep breath.',
+    'Wander freely. I’ll mind the clock.',
+    'A little rest makes the next bit easier.',
+    'Snack break? I won’t tell.'
+  ];
+  let nudgeUntil=0, nextNudge=0, lastNudge='';
+  // Set by the page while any timer is running, in every mode.
+  const running = () => document.body.dataset.timerRunning === 'true';
   function hideNudge() { bubble.hidden=true; nudgeUntil=0; }
   window.addEventListener('cat:focus-nudge', () => {
     const now=performance.now();
-    if(now<nextNudge||drag||settings.open||document.hidden||!focusing())return;
-    const choices=nudges.map((_,index)=>index).filter(index=>index!==lastNudge);
+    if(now<nextNudge||drag||settings.open||document.hidden||!running())return;
+    const lines=document.body.dataset.catMood === 'break' ? breakNudges : nudges;
+    const choices=lines.filter(line=>line!==lastNudge);
     lastNudge=choices[Math.floor(Math.random()*choices.length)];
-    bubble.textContent=nudges[lastNudge];
+    bubble.textContent=lastNudge;
     bubble.hidden=false;nudgeUntil=now+4200;nextNudge=now+45000;
     refresh();
   });
-  new MutationObserver(() => { if(!focusing())hideNudge(); }).observe(document.body, {attributes:true,attributeFilter:['data-focusing']});
+  new MutationObserver(() => { if(!running())hideNudge(); }).observe(document.body, {attributes:true,attributeFilter:['data-timer-running']});
   const ctx = canvas.getContext('2d');
   ctx.imageSmoothingEnabled = false;
   const measure = document.createElement('canvas').getContext('2d');

@@ -113,13 +113,16 @@ const timingFields=['#focus-minutes','#break-minutes','#long-break-minutes'].map
 const presetButtons=[...document.querySelectorAll('[data-preset]')];
 let savedTimings=[25,5,15];
 function selectPreset(value){presetButtons.forEach(button=>button.setAttribute('aria-pressed',String(button.dataset.preset===value)))}
-settingsCog.onclick=()=>{
+let settingsFromKeyboard=false;
+settingsCog.onclick=event=>{
+  // A keyboard press has no click count. Only keyboard users need focus returned to the cog.
+  settingsFromKeyboard=event.detail===0;
   timingFields.forEach((field,index)=>field.value=savedTimings[index]);
   const preset=savedTimings.join(',');
   selectPreset(presetButtons.some(button=>button.dataset.preset===preset)?preset:'custom');
   settingsPane.showModal();wake();
 };
-function closeSettings(){settingsPane.close();settingsCog.focus();wake()}
+function closeSettings(){settingsPane.close();if(settingsFromKeyboard)settingsCog.focus();else document.activeElement?.blur();wake()}
 document.querySelector('#settings-close').onclick=closeSettings;
 settingsPane.addEventListener('close',wake);
 settingsPane.addEventListener('click',event=>{if(event.target===settingsPane){const r=settingsPane.getBoundingClientRect();if(event.clientX<r.left||event.clientX>r.right||event.clientY<r.top||event.clientY>r.bottom)closeSettings()}});
@@ -137,13 +140,20 @@ document.querySelector('#settings-form').onsubmit=event=>{
 };
 const modeArea=document.querySelector('.mode-area');
 const timerAdjust=document.querySelector('#timer-adjust');
+let replayClick=null;
 function wake(event){
   const returning=document.body.classList.contains('idle');
   if(returning&&event?.type==='pointermove'&&!event.buttons&&!event.target.closest('button,.pixel-cat,dialog')&&
-     document.body.dataset.focusing==='true'&&!settingsPane.open&&!document.hidden){
+     document.body.dataset.timerRunning==='true'&&!settingsPane.open&&!document.hidden){
     window.dispatchEvent(new Event('cat:focus-nudge'));
   }
-  document.body.classList.remove('idle');surface.inert=false;modeArea.inert=false;timerAdjust.inert=false;clearTimeout(idleTimer);idleTimer=setTimeout(()=>{if(sessionComplete||settingsPane.open||document.querySelector('.pixel-cat')?.dataset.dragging==='true')return;document.body.classList.add('idle');surface.inert=true;modeArea.inert=true;timerAdjust.inert=true},3500)}
+  document.body.classList.remove('idle');surface.inert=false;modeArea.inert=false;timerAdjust.inert=false;clearTimeout(idleTimer);
+  if(event?.type==='pointerdown'){
+    // Faded controls were not hit-testable when this press began, so find the button now they are back.
+    const button=returning&&event.button===0?document.elementFromPoint(event.clientX,event.clientY)?.closest('button'):null;
+    replayClick=button&&!button.disabled&&button!==event.target.closest('button')?button:null;
+  }
+  if(event?.type==='click'&&replayClick){const button=replayClick;replayClick=null;if(!event.target.closest('button'))button.click()}idleTimer=setTimeout(()=>{if(sessionComplete||settingsPane.open||document.querySelector('.pixel-cat')?.dataset.dragging==='true')return;document.body.classList.add('idle');surface.inert=true;modeArea.inert=true;timerAdjust.inert=true},3500)}
 for(const event of ['pointermove','pointerdown','click','keydown'])document.addEventListener(event,wake,{capture:true,passive:true});
 wake();
 const background=document.querySelector('.background');
@@ -225,8 +235,9 @@ window.render=state=>{
   document.body.classList.toggle('session-complete',completed);
   if(completed&&!wasComplete)wake();
   motion(running);
-  // Cat reminders are for focus time: a running stopwatch or Pomodoro focus session, never a break.
-  document.body.dataset.focusing=String(running&&(mode==='stopwatch'||pomodoro&&phase==='focus'));
+  // The cat chats whenever any timer is running, with gentler lines during Pomodoro breaks.
+  document.body.dataset.timerRunning=String(running);
+  document.body.dataset.catMood=pomodoro&&phase!=='focus'?'break':'focus';
   const total=Math.max(0,Math.floor(state.seconds));
   if(total!==shownSecond){
     const hours=Math.floor(total/3600),minutes=Math.floor(total/60)%60,seconds=total%60;

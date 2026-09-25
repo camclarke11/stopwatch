@@ -5,7 +5,7 @@ A quiet macOS stopwatch, Pomodoro and countdown timer, with large DynaPuff numbe
 - Stopwatch, countdown and Pomodoro modes
 - 25/5 and 50/10 presets, plus custom focus and break durations
 - A small wallpaper button beside Reset cycles through the backgrounds
-- Playful cat reminders when mouse movement interrupts a running stopwatch or Pomodoro focus session
+- Playful cat reminders when mouse movement interrupts any running timer, with gentler lines during Pomodoro breaks
 - Full-screen layout and controls that fade when the mouse is idle
 - Space to start/pause, R to reset; + and − adjust countdowns by one minute
 - Local, offline timing; an internet connection is only needed for installation and updates

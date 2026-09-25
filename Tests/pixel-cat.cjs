@@ -11,7 +11,7 @@ async function simulate({width=1280,height=720,reduced=false}={}) {
   const baseline=element();baseline.getBoundingClientRect=()=>({top:height*.65});
   const clock={offsetWidth:width*.8,append(){},getBoundingClientRect:()=>({width:width*.8}),querySelectorAll:selector=>[{left:.1,width:.18,text:'5'},{left:.3,width:.18,text:'1'},...(selector.includes('.sep')?[{left:.48,width:.04,text:':'},{left:0,width:0,text:':'}]:[]),{left:.6,width:.18,text:'0'},{left:.8,width:.18,text:'0'}].map(item=>({textContent:item.text,getBoundingClientRect:()=>({left:width*item.left,width:width*item.width})}))};
   const media={matches:reduced,addEventListener(name,cb){events.media=cb}};
-  const body={append(node){if(node.className==='pixel-cat')cat=node;else bubble=node},classList:{contains(){return false}},dataset:{get focusing(){return String(running&&(mode==='stopwatch'||mode==='pomodoro'&&phase==='focus'))}}};
+  const body={append(node){if(node.className==='pixel-cat')cat=node;else bubble=node},classList:{contains(){return false}},dataset:{get timerRunning(){return String(running)},get catMood(){return mode==='pomodoro'&&phase!=='focus'?'break':'focus'}}};
   const settings={get open(){return modal}};
   const doc={body,head:{append(){}},get hidden(){return hidden},fonts:{ready:Promise.resolve()},createElement:tag=>tag==='span'?baseline:element(),querySelector:s=>s==='.time'?clock:s==='#pomodoro-settings'?settings:{dataset:{get icon(){return running?'pause':'play'}}},addEventListener:(name,fn)=>events[name]=fn};
   const sandbox={document:doc,innerWidth:width,innerHeight:height,matchMedia:()=>media,getComputedStyle:()=>({fontWeight:'700',fontSize:'280px',fontFamily:'DynaPuff'}),performance:{now:()=>now},Math:Object.assign(Object.create(Math),{random:()=>[.6,.8,.6,.8,.6][randomIndex++%5]}),ResizeObserver:class{constructor(fn){observers.push(fn)}observe(){}},MutationObserver:class{constructor(fn){observers.push(fn)}observe(){}},requestAnimationFrame:fn=>{let id=++serial;pending.set(id,{fn,t:now+16});return id},cancelAnimationFrame:id=>pending.delete(id),setTimeout:(fn,ms)=>{let id=++serial;pending.set(id,{fn,t:now+ms});return id},clearTimeout:id=>pending.delete(id),window:{addEventListener:(name,fn)=>events[name]=fn}};
@@ -39,9 +39,11 @@ async function simulate({width=1280,height=720,reduced=false}={}) {
   advance(46000);events['cat:focus-nudge']();assert(!bubble.hidden&&bubble.textContent!==first,'Next nudge varies');
   events.blur();assert(bubble.hidden,'Blur dismisses bubble');
   advance(46000);running=false;events['cat:focus-nudge']();assert(bubble.hidden,'Paused timer does not nudge');
-  running=true;mode='timer';events['cat:focus-nudge']();assert(bubble.hidden,'Countdown timer does not nudge');
-  mode='pomodoro';phase='shortBreak';events['cat:focus-nudge']();assert(bubble.hidden,'Pomodoro breaks do not nudge');
-  phase='focus';events['cat:focus-nudge']();advance(50);assert(!bubble.hidden,'Pomodoro focus sessions nudge');
+  running=true;mode='timer';events['cat:focus-nudge']();advance(50);assert(!bubble.hidden,'Countdown timer nudges');
+  advance(4700);assert(bubble.hidden,'Countdown nudge disappears');
+  advance(46000);mode='pomodoro';phase='shortBreak';events['cat:focus-nudge']();advance(50);assert(!bubble.hidden,'Pomodoro breaks nudge');
+  assert(!/focus|tab|distraction/i.test(bubble.textContent),'Break nudges use break lines');
+  advance(4700);advance(46000);phase='focus';events['cat:focus-nudge']();advance(50);assert(!bubble.hidden,'Pomodoro focus sessions nudge');
   advance(4700);assert(bubble.hidden,'Pomodoro nudge disappears');
   mode='stopwatch';
   advance(125000);

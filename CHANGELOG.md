@@ -1,5 +1,11 @@
 # Releases
 
+## 1.0.5
+
+- The cat now chats in every mode: Stopwatch, Timer and Pomodoro. During Pomodoro breaks it has its own gentler, break-time lines.
+- Fix: clicking a faded control (for example pausing without moving the mouse first) now works on the first click, instead of only bringing the controls back.
+- Fix: after applying Pomodoro timings with the mouse, Space starts the session again instead of reopening the settings.
+
 ## 1.0.4
 
 - Add a pixel cat app icon for the Dock, Finder and app switcher.
