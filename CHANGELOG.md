@@ -1,5 +1,10 @@
 # Releases
 
+## 1.0.6
+
+- 50 new painted wallpapers: 25 playful subjects (a frog in a crown, a cat in a bow tie, a dachshund in a jumper, fried eggs, tulips and more), each in two colourways. Cycle through them with the picture button beside Reset.
+- The Stopwatch / Pomodoro / Timer labels now switch colour with the clock, so they stay readable on pale wallpapers.
+
 ## 1.0.5
 
 - The cat now chats in every mode: Stopwatch, Timer and Pomodoro. During Pomodoro breaks it has its own gentler, break-time lines.
