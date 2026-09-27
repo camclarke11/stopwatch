@@ -50,6 +50,11 @@ struct TimerState: Codable {
             phase = .focus; pomodoroElapsed = 0; completed = false; completedFocusCount = 0; startedAt = nil
             return false
         }
+        if action == "pomodoro-reset-session" {
+            guard mode == .pomodoro else { return false }
+            phase = .focus; pomodoroElapsed = 0; completed = false; completedFocusCount = 0; startedAt = nil
+            return false
+        }
         let justCompleted = tick(at: now)
         if justCompleted && action == "toggle" { return true }
         if action.hasPrefix("adjust:"), mode == .timer, let minutes = Int(action.dropFirst(7)), [-10, -5, -1, 1, 5, 10].contains(minutes) {

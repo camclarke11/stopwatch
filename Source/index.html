@@ -76,7 +76,10 @@ body.timer-mode .hint{width:100%;margin-top:0}
 .settings-fields label{display:flex;flex-direction:column;gap:7px;font-size:11px;color:#fffaf0bf}
 .settings-fields input{width:100%;height:42px;background:#0002;border:1px solid #ffffff30;border-radius:10px;color:#fffaf0;font:500 20px -apple-system,BlinkMacSystemFont,sans-serif;padding:8px;user-select:text}
 .settings-note{font-size:11px;line-height:1.5;color:#fffaf0b3;margin:14px 0 18px}
-.settings-pane #settings-apply{width:100%;background:#fffaf0;color:#252823;border:0;font-weight:600}
+.settings-actions{display:flex;gap:8px}
+.settings-pane #settings-apply{flex:1;min-width:0;background:#fffaf0;color:#252823;border:0;font-weight:600}
+.settings-pane #settings-reset-session{display:grid;place-items:center;flex:none;width:36px}
+#settings-reset-session svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
 @media(max-height:360px){.settings-pane{padding:14px;border-radius:16px}.settings-pane header{margin-bottom:10px}.settings-presets{margin-bottom:12px}.settings-note{margin:10px 0}.settings-fields input{height:36px}}
 .cat-baseline{display:block;align-self:baseline;flex:none;width:0;height:0;pointer-events:none}
 .pixel-cat{position:fixed;left:0;top:0;z-index:2;pointer-events:auto;cursor:grab;touch-action:none;image-rendering:pixelated;image-rendering:crisp-edges;opacity:.96}
@@ -87,7 +90,7 @@ body.timer-mode .hint{width:100%;margin-top:0}
 <div class="settings-presets" role="group" aria-label="Timing preset"><button type="button" data-preset="25,5,15" aria-pressed="true">25 / 5</button><button type="button" data-preset="50,10,30" aria-pressed="false">50 / 10</button><button type="button" data-preset="custom" aria-pressed="false">Custom</button></div>
 <div class="settings-fields"><label>Focus · min<input id="focus-minutes" type="number" min="1" max="180" step="1" required value="25"></label><label>Break · min<input id="break-minutes" type="number" min="1" max="180" step="1" required value="5"></label><label>Long break · min<input id="long-break-minutes" type="number" min="1" max="180" step="1" required value="15"></label></div>
 <p class="settings-note" id="settings-note">Long break after every 4 focus sessions.<br>New timings start a fresh, paused focus session.</p>
-<button type="submit" id="settings-apply">Apply timings</button>
+<div class="settings-actions"><button type="submit" id="settings-apply">Apply timings</button><button type="button" id="settings-reset-session" aria-label="Reset Pomodoro cycle" title="Reset Pomodoro cycle"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 10a8 8 0 1 1 1.5 7M4 4v6h6"/></svg></button></div>
 </form></dialog><script type="module">
 
 {
@@ -124,6 +127,7 @@ settingsCog.onclick=event=>{
 };
 function closeSettings(){settingsPane.close();if(settingsFromKeyboard)settingsCog.focus();else document.activeElement?.blur();wake()}
 document.querySelector('#settings-close').onclick=closeSettings;
+document.querySelector('#settings-reset-session').onclick=()=>{send('pomodoro-reset-session');closeSettings()};
 settingsPane.addEventListener('close',wake);
 settingsPane.addEventListener('click',event=>{if(event.target===settingsPane){const r=settingsPane.getBoundingClientRect();if(event.clientX<r.left||event.clientX>r.right||event.clientY<r.top||event.clientY>r.bottom)closeSettings()}});
 presetButtons.forEach(button=>button.onclick=()=>{

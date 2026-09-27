@@ -113,6 +113,23 @@ check(custom.focusMinutes == 40 && custom.timerDuration == 600, "Settings cannot
 check(custom.snapshot(at: 6500)["breakMinutes"] as? Int == 8, "Snapshot exposes configured timings")
 print("Passed: Pomodoro presets, custom intervals, unchanged apply, reset semantics, validation and long breaks.")
 
+var resetCycle = TimerState(); resetCycle.mode = .pomodoro
+resetCycle.focusMinutes = 50; resetCycle.breakMinutes = 10; resetCycle.longBreakMinutes = 30
+resetCycle.completedFocusCount = 2; resetCycle.phase = .focus; resetCycle.pomodoroElapsed = 120
+resetCycle.startedAt = 100
+resetCycle.handle("pomodoro-reset-session", at: 200)
+check(resetCycle.snapshot(at: 200)["focusNumber"] as? Int == 1, "Session reset returns focus three to one")
+check(resetCycle.phase == .focus && resetCycle.completedFocusCount == 0 && resetCycle.pomodoroElapsed == 0 && resetCycle.startedAt == nil && !resetCycle.completed, "Session reset pauses a fresh focus interval")
+check(resetCycle.snapshot(at: 200)["seconds"] as? Double == 3000 && resetCycle.breakMinutes == 10, "Session reset keeps configured timings")
+resetCycle.phase = .longBreak; resetCycle.completed = true; resetCycle.completedFocusCount = 4; resetCycle.pomodoroElapsed = 1800
+resetCycle.handle("pomodoro-reset-session", at: 300)
+check(resetCycle.phase == .focus && resetCycle.completedFocusCount == 0 && !resetCycle.completed && resetCycle.pomodoroElapsed == 0, "Session reset clears a completed long break")
+resetCycle.handle("mode:timer", at: 300)
+resetCycle.timerElapsed = 45; resetCycle.completedFocusCount = 2
+resetCycle.handle("pomodoro-reset-session", at: 301)
+check(resetCycle.timerElapsed == 45 && resetCycle.completedFocusCount == 2, "Pomodoro session reset is ignored in Timer mode")
+print("Passed: Pomodoro cycle reset while running, after completion, and mode isolation.")
+
 var updating = TimerState()
 updating.handle("mode:timer", at: 0)
 updating.handle("toggle", at: 100)
