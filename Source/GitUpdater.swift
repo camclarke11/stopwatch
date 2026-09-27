@@ -14,7 +14,7 @@ final class GitUpdater: NSObject {
         if progressWindow == nil {
             updateStarted = Date()
             let panel = NSPanel(contentRect: NSRect(x: 0, y: 0, width: 420, height: 180), styleMask: [.titled], backing: .buffered, defer: false)
-            panel.title = "Updating Stopwatch"; panel.isReleasedWhenClosed = false
+            panel.title = "Updating Stewie"; panel.isReleasedWhenClosed = false
             let content = NSView(frame: panel.contentView!.bounds)
             let spinner = NSProgressIndicator(frame: NSRect(x: 24, y: 113, width: 28, height: 28))
             spinner.style = .spinning; spinner.startAnimation(nil); content.addSubview(spinner)
@@ -56,8 +56,8 @@ final class GitUpdater: NSObject {
             UserDefaults.standard.removeObject(forKey: "updateExpectedVersion")
             let actual = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? ""
             DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
-                if actual == expected { self.message("Update complete", "Stopwatch \(actual) is installed. You’re ready to go.") }
-                else { self.message("Update didn’t finish", "Stopwatch \(actual) is still installed. Please try Check for Updates again.") }
+                if actual == expected { self.message("Update complete", "Stewie \(actual) is installed. You’re ready to go.") }
+                else { self.message("Update didn’t finish", "Stewie \(actual) is still installed. Please try Check for Updates again.") }
             }
         }
         guard checkout != nil else { return }
@@ -108,9 +108,9 @@ final class GitUpdater: NSObject {
                 let lines = output.split(whereSeparator: \.isNewline).map(String.init)
                 let current = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "0.0.0"
                 guard lines.count == 2, String(lines[0].dropFirst()).compare(current, options: .numeric) == .orderedDescending else {
-                    if manual { self.message("You’re up to date", "Stopwatch \(current) is installed.") }; return
+                    if manual { self.message("You’re up to date", "Stewie \(current) is installed.") }; return
                 }
-                let alert = NSAlert(); alert.messageText = "Stopwatch \(lines[0]) is available"
+                let alert = NSAlert(); alert.messageText = "Stewie \(lines[0]) is available"
                 alert.informativeText = "Build and install this release? This may take a minute. Your timer will carry on after the app restarts."
                 alert.addButton(withTitle: "Install Update"); alert.addButton(withTitle: "Later")
                 if alert.runModal() == .alertFirstButtonReturn { self.build(script: script, checkout: checkout, tag: lines[0], commit: lines[1]) }
@@ -159,7 +159,7 @@ final class GitUpdater: NSObject {
                         DispatchQueue.main.async {
                             self.setBusy(false)
                             if prepared {
-                                self.showProgress("Restarting Stopwatch…")
+                                self.showProgress("Restarting Stewie…")
                                 UserDefaults.standard.set(String(tag.dropFirst()), forKey: "updateExpectedVersion")
                                 self.saveBeforeRestart?()
                                 NSApp.terminate(nil)

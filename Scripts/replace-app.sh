@@ -6,11 +6,12 @@ destination=$2
 app_pid=$3
 [[ "$destination" == *.app && -d "$incoming" && "$app_pid" =~ '^[0-9]+$' ]] || exit 1
 parent=${destination:h}
+app_name=${destination:t:r}
 replacement=$(mktemp -d "$parent/.stopwatch-install.XXXXXX")
-backup="$parent/Stopwatch Previous.app"
+backup="$parent/$app_name Previous.app"
 trap 'rm -rf -- "$replacement"' EXIT
-/usr/bin/ditto "$incoming" "$replacement/Stopwatch.app"
-/usr/bin/codesign --verify --deep --strict "$replacement/Stopwatch.app"
+/usr/bin/ditto "$incoming" "$replacement/$app_name.app"
+/usr/bin/codesign --verify --deep --strict "$replacement/$app_name.app"
 # Only remove backups created by this installer, never an unrelated app.
 if [[ -e "$backup" ]]; then
   [[ -f "$backup/Contents/Resources/GitCheckout.txt" ]] || { print -u2 'Backup name already in use.'; exit 1; }
@@ -29,7 +30,7 @@ if kill -0 "$app_pid" 2>/dev/null; then
 fi
 [[ ! -e "$backup" ]] || rm -rf -- "$backup"
 if [[ -e "$destination" ]]; then mv -- "$destination" "$backup"; fi
-if ! mv -- "$replacement/Stopwatch.app" "$destination"; then
+if ! mv -- "$replacement/$app_name.app" "$destination"; then
   [[ ! -e "$backup" ]] || mv -- "$backup" "$destination"
   exit 1
 fi

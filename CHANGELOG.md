@@ -1,5 +1,15 @@
 # Releases
 
+## 1.0.8
+
+- Rename the macOS app, menu and update messages to Stewie while keeping the same timer settings and update source.
+- Existing Stopwatch installations migrate to Stewie.app on first launch after updating.
+
+## 1.0.7
+
+- Replace the 50 painted wallpapers with 24 generated backgrounds selected for this app, alongside the seven originals.
+- Add a Pomodoro cycle reset icon beside Apply timings.
+
 ## 1.0.6
 
 - 50 new painted wallpapers: 25 playful subjects (a frog in a crown, a cat in a bow tie, a dachshund in a jumper, fried eggs, tulips and more), each in two colourways. Cycle through them with the picture button beside Reset.

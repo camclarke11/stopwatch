@@ -27,8 +27,8 @@ case "$operation" in
     [[ -f "$stage/build.sh" && -f "$stage/VERSION" ]] || { print -u2 'Release is missing the app source.'; exit 1; }
     [[ "$(cat "$stage/VERSION")" == "$4" ]] || { print -u2 "Release tag and VERSION disagree."; exit 1; }
     STOPWATCH_CHECKOUT="$checkout" /bin/zsh "$stage/build.sh" >&2
-    /usr/bin/codesign --verify --deep --strict "$stage/Stopwatch.app"
-    print -r -- "$stage/Stopwatch.app"
+    /usr/bin/codesign --verify --deep --strict "$stage/Stewie.app"
+    print -r -- "$stage/Stewie.app"
     trap - EXIT
     ;;
   *) exit 2 ;;

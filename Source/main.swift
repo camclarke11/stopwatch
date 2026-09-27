@@ -14,6 +14,29 @@ final class App: NSObject, NSApplicationDelegate, WKScriptMessageHandler, WKNavi
     var completionSound: NSSound?
     var backgrounds: [URL] = []
     var backgroundIndex = 0
+    func migrateLegacyAppIfNeeded() -> Bool {
+        let source = Bundle.main.bundleURL.standardizedFileURL
+        let applications = FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent("Applications").standardizedFileURL
+        guard source.lastPathComponent == "Stopwatch.app", source.deletingLastPathComponent() == applications else { return false }
+        let destination = applications.appendingPathComponent("Stewie.app")
+        guard !FileManager.default.fileExists(atPath: destination.path),
+              let bundledHelper = Bundle.main.url(forResource: "migrate-app", withExtension: "sh") else { return false }
+        do {
+            let folder = FileManager.default.temporaryDirectory.appendingPathComponent("stewie-migration-" + UUID().uuidString)
+            try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+            let helper = folder.appendingPathComponent("migrate-app.sh")
+            try FileManager.default.copyItem(at: bundledHelper, to: helper)
+            let process = Process()
+            process.executableURL = URL(fileURLWithPath: "/bin/zsh")
+            process.arguments = [helper.path, source.path, destination.path, String(ProcessInfo.processInfo.processIdentifier)]
+            try process.run()
+            NSApp.terminate(nil)
+            return true
+        } catch {
+            NSLog("Could not rename Stopwatch.app to Stewie.app: %@", error.localizedDescription)
+            return false
+        }
+    }
     func backgroundURI(_ url: URL) -> String? {
         guard let data = try? Data(contentsOf: url) else { return nil }
         let mime = url.pathExtension.lowercased() == "png" ? "image/png" : url.pathExtension.lowercased() == "webp" ? "image/webp" : "image/jpeg"
@@ -51,9 +74,10 @@ final class App: NSObject, NSApplicationDelegate, WKScriptMessageHandler, WKNavi
         }
     }
     func applicationDidFinishLaunching(_ notification: Notification) {
+        if migrateLegacyAppIfNeeded() { return }
         let menu = NSMenu()
         let item = NSMenuItem(); menu.addItem(item)
-        let submenu = NSMenu(); submenu.addItem(withTitle: "Quit Stopwatch", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q"); item.submenu = submenu
+        let submenu = NSMenu(); submenu.addItem(withTitle: "Quit Stewie", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q"); item.submenu = submenu
         submenu.insertItem(updater.item, at: 0)
         submenu.insertItem(NSMenuItem.separator(), at: 1)
         updater.saveBeforeRestart = { [weak self] in
@@ -87,7 +111,7 @@ final class App: NSObject, NSApplicationDelegate, WKScriptMessageHandler, WKNavi
         web.navigationDelegate = self
         web.setValue(false, forKey: "drawsBackground")
         window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 520, height: 290), styleMask: [.titled, .closable, .miniaturizable, .resizable], backing: .buffered, defer: false)
-        window.title = "Stopwatch"
+        window.title = "Stewie"
         window.contentMinSize = NSSize(width: 320, height: 220)
         window.collectionBehavior.insert(.fullScreenPrimary)
         window.titlebarAppearsTransparent = true

@@ -1,4 +1,4 @@
-# Stopwatch
+# Stewie
 
 A quiet macOS stopwatch, Pomodoro and countdown timer, with large DynaPuff numbers, painted backgrounds and a small draggable pixel cat.
 
@@ -31,7 +31,7 @@ Requires macOS 13 or later. Each Mac builds its own app, so Apple silicon and In
    ./install.sh
    ```
 
-The app opens and is installed in **your home folder → Applications → Stopwatch**. Keep the cloned `stopwatch` folder in place: the app uses it to fetch future releases. If you move it, quit Stopwatch and run `./install.sh` from the new location.
+The app opens and is installed in **your home folder → Applications → Stewie**. Keep the cloned `stopwatch` folder in place: the app uses it to fetch future releases. If you move it, quit Stewie and run `./install.sh` from the new location.
 
 No Apple Developer membership or App Store account is needed for this local source build. The app is locally signed, not notarized for general binary distribution.
 
@@ -50,11 +50,11 @@ Do not clone again from inside that folder. If the build says no compatible SDK 
 
 ## Updates
 
-The app checks for new stable version tags after launch and every six hours while open. You can also choose **Stopwatch → Check for Updates…** from the Mac menu bar.
+The app checks for new stable version tags after launch and every six hours while open. You can also choose **Stewie → Check for Updates…** from the Mac menu bar. Existing Stopwatch installations can update to Stewie; the first launch after updating moves the app to its new name and restarts it once more.
 
 When offered a release, click **Install Update**. The menu shows progress while the new version builds. The app restarts after the replacement is ready, restoring your timer and settings. A running timer includes the time spent restarting; paused timers stay paused. Ordinary quitting does not save a running session.
 
-Updates build a separate copy of the selected release; they do not switch branches or overwrite edits in your checkout. Internet and the Command Line Tools must remain available. If fetching, compiling or preparing the replacement fails, the currently installed app remains in place. The installer retains **Stopwatch Previous.app** beside it after a successful replacement, so you can return to that version if needed. Launch success is not a guarantee against later runtime bugs.
+Updates build a separate copy of the selected release; they do not switch branches or overwrite edits in your checkout. Internet and the Command Line Tools must remain available. If fetching, compiling or preparing the replacement fails, the currently installed app remains in place. The installer retains **Stewie Previous.app** beside it after later replacements; the rename update retains **Stopwatch Previous.app**. Launch success is not a guarantee against later runtime bugs.
 
 Only install releases from a repository you trust: updates compile and run that repository's build script on your Mac.
 
