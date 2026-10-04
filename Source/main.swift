@@ -14,6 +14,34 @@ final class App: NSObject, NSApplicationDelegate, WKScriptMessageHandler, WKNavi
     var completionSound: NSSound?
     var backgrounds: [URL] = []
     var backgroundIndex = 0
+    var log = TaskLog()
+    var logSavedAt = 0.0
+    let logURL = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
+        .appendingPathComponent("Stewie", isDirectory: true).appendingPathComponent("tasks.json")
+    func loadLog() {
+        guard let data = try? Data(contentsOf: logURL) else { return }
+        let decoder = JSONDecoder(); decoder.dateDecodingStrategy = .iso8601
+        if let saved = try? decoder.decode(TaskLog.self, from: data) { log = saved; return }
+        // Set an unreadable file aside rather than overwrite someone's history.
+        let aside = logURL.deletingPathExtension().appendingPathExtension("unreadable-\(Int(Date().timeIntervalSince1970)).json")
+        try? FileManager.default.moveItem(at: logURL, to: aside)
+    }
+    func saveLog() {
+        let encoder = JSONEncoder(); encoder.dateEncodingStrategy = .iso8601
+        do {
+            try FileManager.default.createDirectory(at: logURL.deletingLastPathComponent(), withIntermediateDirectories: true)
+            try encoder.encode(log).write(to: logURL, options: .atomic)
+            logSavedAt = now()
+        } catch {
+            NSLog("Could not save tasks: %@", error.localizedDescription)
+        }
+    }
+    func sendHistory() {
+        log.record(state, at: now())
+        guard let data = try? JSONSerialization.data(withJSONObject: log.history()),
+              let json = String(data: data, encoding: .utf8) else { return }
+        web.evaluateJavaScript("window.renderHistory(\(json));", completionHandler: nil)
+    }
     func migrateLegacyAppIfNeeded() -> Bool {
         let source = Bundle.main.bundleURL.standardizedFileURL
         let applications = FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent("Applications").standardizedFileURL
@@ -82,6 +110,7 @@ final class App: NSObject, NSApplicationDelegate, WKScriptMessageHandler, WKNavi
         submenu.insertItem(NSMenuItem.separator(), at: 1)
         updater.saveBeforeRestart = { [weak self] in
             guard let self else { return }
+            self.log.record(self.state, at: self.now()); self.saveLog()
             let checkpoint = UpdateCheckpoint(state: self.state, now: self.now())
             if let data = try? JSONEncoder().encode(checkpoint) {
                 UserDefaults.standard.set(data, forKey: "updateCheckpoint")
@@ -104,6 +133,7 @@ final class App: NSObject, NSApplicationDelegate, WKScriptMessageHandler, WKNavi
             state = checkpoint.restored(at: now())
         }
         UserDefaults.standard.removeObject(forKey: "updateCheckpoint")
+        loadLog()
         updater.start()
         let config = WKWebViewConfiguration()
         config.userContentController.add(self, name: "stopwatch")
@@ -141,9 +171,18 @@ final class App: NSObject, NSApplicationDelegate, WKScriptMessageHandler, WKNavi
     func userContentController(_ userContentController: WKUserContentController, didReceive message: WKScriptMessage) {
         guard let action = message.body as? String else { return }
         if action == "background:next" { nextBackground(); return }
+        if action == "history" { sendHistory(); return }
+        let timestamp = now()
+        if action.hasPrefix("task-") {
+            // Credit the outgoing top task before the list changes.
+            log.record(state, at: timestamp)
+            if log.handle(action) { render(); saveLog() }
+            return
+        }
         if action == "ready" { ready = true }
         else {
-            if state.handle(action, at: now()) { signalCompletion() }
+            log.record(state, at: timestamp)
+            if state.handle(action, at: timestamp) { signalCompletion() }
             if action.hasPrefix("mode:") { UserDefaults.standard.set(state.mode.rawValue, forKey: "timerMode") }
             if action.hasPrefix("pomodoro-settings:") {
                 UserDefaults.standard.set([state.focusMinutes, state.breakMinutes, state.longBreakMinutes], forKey: "pomodoroTimings")
@@ -155,11 +194,21 @@ final class App: NSObject, NSApplicationDelegate, WKScriptMessageHandler, WKNavi
     func render() {
         guard ready else { return }
         let timestamp = now()
+        let wasTracking = log.isTracking
+        log.record(state, at: timestamp)
         if state.tick(at: timestamp) { signalCompletion() }
+        log.record(state, at: timestamp)
+        if log.isTracking != wasTracking || (log.isTracking && timestamp - logSavedAt >= 30) { saveLog() }
         synchronizeTicker()
-        let data = try! JSONSerialization.data(withJSONObject: state.snapshot(at: timestamp))
+        var snapshot = state.snapshot(at: timestamp)
+        snapshot.merge(log.snapshot()) { current, _ in current }
+        let data = try! JSONSerialization.data(withJSONObject: snapshot)
         let json = String(data: data, encoding: .utf8)!
         web.evaluateJavaScript("window.render(\(json));", completionHandler: nil)
+    }
+    func applicationWillTerminate(_ notification: Notification) {
+        guard ready else { return }
+        log.record(state, at: now()); saveLog()
     }
     func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool { true }
 }

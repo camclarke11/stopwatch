@@ -146,3 +146,79 @@ let pausedCheckpoint = UpdateCheckpoint(state: updating, now: 500, date: Date(ti
 let pausedRestore = pausedCheckpoint.restored(at: 0, date: Date(timeIntervalSince1970: 2000))
 check(pausedRestore.elapsed(at: 0) == 60 && pausedRestore.startedAt == nil, "Paused timer remains paused across update")
 print("Update checkpoint tests passed")
+
+var utc = Calendar(identifier: .gregorian); utc.timeZone = TimeZone(identifier: "UTC")!
+let noon = utc.date(from: DateComponents(year: 2026, month: 10, day: 4, hour: 12))!
+var serial = 0
+func nextID() -> String { serial += 1; return "t\(serial)" }
+var list = TaskLog()
+for title in ["Write report", "  Email Sam  ", "Book dentist"] { list.handle("task-add:" + title, date: noon, makeID: nextID) }
+check(list.tasks.allSatisfy { $0.created == noon && $0.finished == nil && $0.removed == nil }, "New tasks record when they were created")
+check(list.tasks.map(\.title) == ["Write report", "Email Sam", "Book dentist"], "Tasks keep their order and trim spaces")
+check(!list.handle("task-add:Fourth", makeID: nextID) && list.tasks.count == 3, "Three unfinished tasks fill the list")
+check(!list.handle("task-add:   ", makeID: nextID), "Blank tasks are ignored")
+check(list.handle("task-edit:t1:Draft: intro") && list.tasks[0].title == "Draft: intro", "Titles may contain colons")
+list.handle("task-edit:t1:" + String(repeating: "x", count: 200))
+check(list.tasks[0].title.count == TaskLog.titleLimit, "Titles are limited")
+check(!list.handle("task-edit:t1:   ") && list.tasks[0].title.count == TaskLog.titleLimit, "Blank edits are ignored")
+list.handle("task-done:t1:1", date: noon)
+check(list.tasks.map(\.id) == ["t2", "t3", "t1"] && list.activeTask?.id == "t2", "Finished task sinks and the next becomes active")
+check(!list.handle("task-move:t1:0"), "Finished tasks cannot be dragged above unfinished ones")
+list.handle("task-move:t3:0")
+check(list.tasks.map(\.id) == ["t3", "t2", "t1"], "Drag to the top")
+list.handle("task-move:t3:9")
+check(list.tasks.map(\.id) == ["t2", "t3", "t1"], "Drag clamps to the unfinished tasks")
+list.handle("task-done:t2:1", date: noon)
+check(list.tasks.map(\.id) == ["t3", "t1", "t2"], "Latest finished task goes to the very bottom")
+list.handle("task-done:t1:0")
+check(list.tasks.map(\.id) == ["t3", "t1", "t2"] && list.tasks[1].finished == nil, "Reopened task rejoins the unfinished tasks")
+list.handle("task-add:Call bank", makeID: nextID)
+check(list.tasks.map(\.id) == ["t3", "t1", "t4"] && list.archive.map(\.id) == ["t2"], "Adding to a full list clears the lowest finished task")
+check(list.archive[0].finished == noon && list.archive[0].removed != nil, "Cleared tasks keep their finish and removal dates")
+check(!list.handle("task-done:t9:1") && !list.handle("task-bogus:t3:1") && !list.handle("task-done:t3:yes") && !list.handle("task-add"), "Unknown tasks and malformed actions are ignored")
+list.handle("task-delete:t1")
+check(list.tasks.map(\.id) == ["t3", "t4"] && list.archive.map(\.id) == ["t2", "t1"], "Removed tasks are archived even without tracked time")
+print("Passed: task list limit, editing, finishing, reordering and removal.")
+
+var work = TaskLog(), watch = TimerState()
+func record(_ t: Double) { work.record(watch, at: t, date: noon.addingTimeInterval(t), calendar: utc) }
+func press(_ action: String, at t: Double) { record(t); watch.handle(action, at: t); record(t) }
+func edit(_ action: String, at t: Double) { record(t); work.handle(action, date: noon.addingTimeInterval(t), makeID: nextID); record(t) }
+func tick(at t: Double) { record(t); watch.tick(at: t); record(t) }
+edit("task-add:Report", at: 0); edit("task-add:Email", at: 0)
+let report = work.tasks[0].id, email = work.tasks[1].id
+press("toggle", at: 0); record(30); press("toggle", at: 60)
+check(work.seconds(for: report) == 60 && work.seconds(for: email) == 0 && !work.isTracking, "Stopwatch time goes to the top task")
+press("toggle", at: 100); edit("task-move:\(email):0", at: 130)
+check(work.isTracking && (work.snapshot()["tracking"] as? Bool) == true, "Snapshot reports tracking")
+press("toggle", at: 150)
+check(work.seconds(for: report) == 90 && work.seconds(for: email) == 20, "Dragging a task to the top moves the time to it")
+press("toggle", at: 200); press("toggle", at: 200.4)
+check(work.sessions.count == 3, "Sub-second starts are not recorded")
+press("mode:pomodoro", at: 300); press("toggle", at: 300); record(1000); tick(at: 1800.6)
+check(work.seconds(for: email) == 1520 && !work.isTracking, "Pomodoro focus counts only up to its deadline")
+check(work.sessions.map { $0.completed == true } == [false, false, false, true], "Only a focus interval that ran to its end is marked completed")
+press("toggle", at: 1900); record(2200)
+check(watch.phase == .shortBreak && work.seconds(for: email) == 1520 && !work.isTracking, "Pomodoro breaks are not counted")
+press("mode:timer", at: 2200); press("toggle", at: 2300); edit("task-done:\(email):1", at: 2360)
+check(work.activeTask?.id == report && work.seconds(for: email) == 1580 && work.isTracking, "Timer counts, and finishing a task hands the clock to the next")
+check(work.sessions.last(where: { $0.taskID == email })?.completed == nil, "A countdown interrupted by finishing the task is not marked completed")
+press("mode:stopwatch", at: 2400)
+check(work.seconds(for: report) == 130 && !work.isTracking, "Switching modes stops tracking")
+let beforeMidnight = 12 * 3600 - 100.0
+press("toggle", at: beforeMidnight); record(beforeMidnight + 50); record(beforeMidnight + 160); press("toggle", at: beforeMidnight + 200)
+let days = work.history(calendar: utc)
+check(days.map { $0["date"] as? String } == ["2026-10-05", "2026-10-04"], "History splits at midnight, newest day first")
+let firstDay = days[1]["tasks"] as! [[String: Any]], secondDay = days[0]["tasks"] as! [[String: Any]]
+check(firstDay.map { $0["title"] as? String } == ["Email", "Report"], "Longest task first")
+check(firstDay[0]["seconds"] as? Double == 1580 && firstDay[0]["pomodoro"] as? Double == 1500 && firstDay[0]["stopwatch"] as? Double == 20 && firstDay[0]["timer"] as? Double == 60, "Time is split by mode")
+check(firstDay[0]["finished"] as? Bool == true && firstDay[1]["finished"] as? Bool == false, "Finished tasks are marked on the day they were finished")
+check(firstDay[1]["seconds"] as? Double == 290 && secondDay.first?["stopwatch"] as? Double == 40, "Each day keeps its own share of a session across midnight")
+edit("task-delete:\(email)", at: 50000)
+check(work.archive.map(\.id) == [email] && (work.history(calendar: utc)[1]["tasks"] as! [[String: Any]])[0]["title"] as? String == "Email", "Removed tasks keep their history")
+press("toggle", at: 60000)
+let taskEncoder = JSONEncoder(); taskEncoder.dateEncodingStrategy = .iso8601
+let taskDecoder = JSONDecoder(); taskDecoder.dateDecodingStrategy = .iso8601
+let reloaded = try! taskDecoder.decode(TaskLog.self, from: taskEncoder.encode(work))
+check(reloaded.tasks == work.tasks && reloaded.archive == work.archive && reloaded.sessions == work.sessions && !reloaded.isTracking, "Tasks and history persist; the open clock does not")
+print("Passed: task time tracking across modes, Pomodoro breaks, reordering, finishing, midnight, history and persistence.")

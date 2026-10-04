@@ -1,5 +1,14 @@
 # Releases
 
+## 1.0.9
+
+- Add a three-task list for the day in the top-left corner. Drag tasks to reorder them, click one to rename it, and tick it off to sink it to the bottom with a strikethrough.
+- The top unfinished task collects time whenever the stopwatch, timer or a Pomodoro focus runs. Breaks are not counted.
+- When the controls fade, the current task appears above the enlarged clock.
+- A day-by-day task history, split by mode, opens from the clock icon in the list. Every task and session is kept in `~/Library/Application Support/Stewie/tasks.json`.
+- In smaller windows the list folds into a pill beside the mode switcher.
+- Clicking the faded add-task field focuses it straight away.
+
 ## 1.0.8
 
 - Rename the macOS app, menu and update messages to Stewie while keeping the same timer settings and update source.

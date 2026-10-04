@@ -26,6 +26,10 @@ struct TimerState: Codable {
         let stored = mode == .stopwatch ? stopwatchElapsed : mode == .timer ? timerElapsed : pomodoroElapsed
         return stored + (startedAt.map { max(0, now - $0) } ?? 0)
     }
+    // Any running timer earns time for the top task, except a Pomodoro break.
+    var countsTowardTask: Bool { startedAt != nil && (mode != .pomodoro || phase == .focus) }
+    // Countdowns stop at their deadline even if the next tick arrives late.
+    func trackedElapsed(at now: Double) -> Double { mode == .stopwatch ? elapsed(at: now) : min(duration, elapsed(at: now)) }
     mutating func pause(at now: Double) {
         let value = elapsed(at: now)
         if mode == .stopwatch { stopwatchElapsed = value } else if mode == .timer { timerElapsed = min(duration, value) }

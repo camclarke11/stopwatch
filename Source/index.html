@@ -68,8 +68,8 @@ body.timer-mode .hint{width:100%;margin-top:0}
 .settings-pane button{width:auto;height:36px;font-size:12px;border-radius:10px;border:1px solid #ffffff25;background:#ffffff0d;color:inherit}
 .settings-pane button:hover{background:#ffffff22;filter:none}
 .settings-pane button:focus-visible,.settings-pane input:focus-visible{outline:2px solid #fffaf0;outline-offset:3px}
-.settings-pane #settings-close{display:grid;place-items:center;width:28px;height:28px;border:0;background:transparent}
-#settings-close svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round}
+.settings-pane #settings-close,.settings-pane #history-close{display:grid;place-items:center;width:28px;height:28px;border:0;background:transparent}
+#settings-close svg,#history-close svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round}
 .settings-presets{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:18px}
 .settings-presets button[aria-pressed=true]{background:#fffaf0;color:#252823;border-color:transparent}
 .settings-fields{display:grid;align-items:end;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
@@ -84,14 +84,79 @@ body.timer-mode .hint{width:100%;margin-top:0}
 .cat-baseline{display:block;align-self:baseline;flex:none;width:0;height:0;pointer-events:none}
 .pixel-cat{position:fixed;left:0;top:0;z-index:2;pointer-events:auto;cursor:grab;touch-action:none;image-rendering:pixelated;image-rendering:crisp-edges;opacity:.96}
 .pixel-cat[data-dragging=true]{cursor:grabbing}
-</style><img class="background" src="__BACKGROUND_DATA__" alt="" aria-hidden="true"><div class="mode-area"><div class="mode-switch" role="group" aria-label="Timer mode"><button id="mode-stopwatch" aria-pressed="true" title="Switching modes pauses your current timer">Stopwatch</button><button id="mode-pomodoro" aria-pressed="false" title="25-minute focus, 5-minute break">Pomodoro</button><button id="mode-timer" aria-pressed="false" title="Simple countdown timer">Timer</button></div><div class="session-row"><div class="session-label" id="session-label" role="status" aria-live="polite" hidden></div></div></div><main><div class="time" role="timer" aria-label="Elapsed time"><span id="hours" hidden></span><span id="hours-separator" class="sep" hidden>:</span><span id="minutes"></span><span class="sep">:</span><span id="seconds"></span></div><div class="interface"><div class="timer-adjust" id="timer-adjust" hidden><div class="adjust-rail left" role="group" aria-label="Adjust by 5 minutes"><button data-adjust="-5" aria-label="Subtract 5 minutes" title="Subtract 5 minutes"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 12h12"/></svg></button><span>5 min</span><button data-adjust="5" aria-label="Add 5 minutes" title="Add 5 minutes"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 12h12M12 6v12"/></svg></button></div><div class="adjust-rail right" role="group" aria-label="Adjust by 10 minutes"><button data-adjust="-10" aria-label="Subtract 10 minutes" title="Subtract 10 minutes"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 12h12"/></svg></button><span>10 min</span><button data-adjust="10" aria-label="Add 10 minutes" title="Add 10 minutes"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 12h12M12 6v12"/></svg></button></div></div><div class="controls"><button id="toggle" class="primary" aria-label="Start" title="Start" data-icon="play"><svg class="play-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5 18 12 8 18.5Z"/></svg><svg class="pause-icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="6.5" y="5" width="4" height="14" rx="1"/><rect x="13.5" y="5" width="4" height="14" rx="1"/></svg></button><button id="reset" aria-label="Reset" title="Reset" disabled><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 10a8 8 0 1 1 1.5 7M4 4v6h6"/></svg></button><button id="background-next" aria-label="Next background" title="Next background"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="3"/><circle cx="8" cy="9" r="1.5"/><path d="m4 17 5-5 4 4 3-3 5 5"/></svg></button><button id="settings-cog" aria-label="Pomodoro settings" title="Pomodoro settings" aria-haspopup="dialog" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 3-.6 2.2-1.6.9-2.2-.6-3 5.2 1.6 1.6v1.8l-1.6 1.6 3 5.2 2.2-.6 1.6.9L9 23h6l.6-2.2 1.6-.9 2.2.6 3-5.2-1.6-1.6v-1.8l1.6-1.6-3-5.2-2.2.6-1.6-.9L15 3Z" transform="translate(1.2 -1.2) scale(.9)"/><circle cx="12" cy="10.5" r="3"/></svg></button></div><div class="hint">Space to start / pause · R to reset</div></div></main><dialog class="settings-pane" id="pomodoro-settings" aria-labelledby="settings-title" aria-describedby="settings-note">
+.tasks{--task-shadow:var(--clock-shadow,0 1px 3px #0006);position:fixed;z-index:3;top:14px;left:14px;width:264px;color:var(--clock-ink,#fffaf0);font-size:13px;opacity:1;transition:opacity 1.4s ease}
+body.idle .tasks{opacity:0;pointer-events:none}
+.tasks button{width:auto;height:auto;padding:0;border:0;border-radius:8px;background:transparent;color:inherit;font:inherit}
+.tasks button:hover{filter:none}
+.tasks button:focus-visible,.task-title:focus-visible{outline:2px solid currentColor;outline-offset:1px}
+.tasks svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+.tasks-pill{display:none}
+.tasks-panel{padding:2px 6px 6px;border:1px solid #ffffff55;border-radius:14px;background:linear-gradient(135deg,#ffffff40,#ffffff16);-webkit-backdrop-filter:blur(28px) saturate(160%);backdrop-filter:blur(28px) saturate(160%);box-shadow:inset 0 1px 0 #ffffff33,0 6px 24px #00000020;text-shadow:var(--task-shadow)}
+.tasks-head{display:flex;align-items:center;justify-content:space-between;height:30px;padding-left:9px}
+.tasks-head h2{margin:0;font-size:11px;font-weight:600;letter-spacing:.7px;text-transform:uppercase;opacity:.8}
+.tasks .tasks-head button{display:grid;place-items:center;width:28px;height:28px}
+.tasks .tasks-head button:hover,.tasks .task-check:hover,.tasks .task-remove:hover{background:#ffffff2e}
+.task-list{list-style:none;margin:0;padding:0}
+.task{position:relative;display:flex;align-items:center;gap:6px;height:32px;padding:0 8px 0 3px;border-radius:9px;transition:transform .18s ease,background-color .2s}
+.task.active{background:#ffffff26}
+.tasks .task-check{display:grid;place-items:center;flex:none;width:26px;height:26px;border-radius:50%}
+.task-check .tick{opacity:0}
+.task.done .task-check .tick{opacity:1}
+.task.done .task-check circle{fill:currentColor;fill-opacity:.2}
+.task-title{flex:1;min-width:0;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;line-height:26px;border-radius:4px;cursor:grab}
+.task.done{opacity:.5}
+.task.done .task-title{text-decoration:line-through;cursor:text}
+.task-time{flex:none;font-size:11px;font-variant-numeric:tabular-nums;opacity:.8;transition:opacity .15s}
+.task.tracking .task-time::before{content:'';display:inline-block;width:6px;height:6px;margin:0 5px 1px 0;border-radius:50%;background:#ff6f61;animation:task-pulse 2s ease-in-out infinite}
+@keyframes task-pulse{50%{opacity:.3}}
+.tasks .task-remove{position:absolute;right:4px;display:grid;place-items:center;width:24px;height:24px;opacity:0}
+.task-remove svg{width:14px;height:14px}
+.task:hover .task-remove,.tasks .task-remove:focus-visible{opacity:1}
+.task:hover .task-time{opacity:0}
+.task.dragging{z-index:1;transition:background-color .2s;background:#ffffff47;box-shadow:0 6px 18px #0003}
+.task.dragging .task-title{cursor:grabbing}
+.task-list.settling .task{transition:none}
+.task-add{display:flex;align-items:center;gap:6px;height:32px;padding:0 8px 0 3px}
+.task-add[hidden]{display:none}
+.task-add>span{display:grid;place-items:center;flex:none;width:26px;opacity:.75}
+.task-add input,.task-edit{flex:1;min-width:0;height:26px;margin-left:-5px;padding:0 5px;border:0;border-radius:6px;background:transparent;color:inherit;font:inherit;text-shadow:inherit;user-select:text;outline:none}
+.task-add input::placeholder{color:inherit;opacity:.65}
+.task-add input:focus,.task-edit{background:#0000002b;text-shadow:none}
+.current-task{position:absolute;left:0;right:0;top:.12em;font:600 .085em/1.3 ui-rounded,-apple-system,BlinkMacSystemFont,sans-serif;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;opacity:0;transition:opacity 1.4s ease;pointer-events:none;text-shadow:var(--clock-shadow,none)}
+body.idle .current-task{opacity:.85}
+@media(max-width:899px),(max-height:599px){
+.tasks{width:auto}
+.tasks .tasks-pill{display:flex;align-items:center;gap:7px;max-width:max(40px,calc(50vw - 150px));height:39px;padding:0 11px;border:1px solid #ffffff55;border-radius:14px;background:linear-gradient(135deg,#ffffff40,#ffffff16);-webkit-backdrop-filter:blur(28px) saturate(160%);backdrop-filter:blur(28px) saturate(160%);box-shadow:inset 0 1px 0 #ffffff33,0 6px 24px #00000020;font-size:12px;text-shadow:var(--task-shadow)}
+.tasks-pill svg{flex:none}
+.tasks-pill span{min-width:0;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.tasks-panel{--task-shadow:none;display:none;position:absolute;top:calc(100% + 6px);left:0;width:min(264px,calc(100vw - 28px));color:#fffaf0;border-color:#ffffff40;background:linear-gradient(145deg,#323632e8,#171b1bf2);box-shadow:0 14px 44px #0005}
+.tasks.open .tasks-panel{display:block}
+}
+@media(max-width:479px){.tasks-pill span{display:none}}
+@media(max-width:399px){.mode-area{padding-left:48px}}
+@media(max-height:360px){.tasks{top:8px;left:8px}.tasks .tasks-pill{height:35px}}
+@media(prefers-reduced-motion:reduce){.tasks,.current-task,.task{transition:none}.task.tracking .task-time::before{animation:none}}
+.history-pane{width:min(420px,calc(100vw - 24px))}
+.history-empty{margin:0;font-size:12px;line-height:1.5;color:#fffaf0b3}
+.history-day+.history-day{margin-top:20px}
+.history-day h3{display:flex;justify-content:space-between;margin:0 0 4px;font-size:11px;font-weight:600;letter-spacing:.6px;text-transform:uppercase;color:#fffaf0b3}
+.history-day ul{list-style:none;margin:0;padding:0}
+.history-day li{display:grid;grid-template-columns:1fr auto;gap:3px 12px;padding:9px 0;border-top:1px solid #ffffff17;font-size:13px}
+.history-title{overflow-wrap:anywhere}
+.history-title.finished::before{content:'✓ ';color:#a6e3ae}
+.history-time{font-variant-numeric:tabular-nums}
+.history-modes{grid-column:1/-1;font-size:11px;color:#fffaf099}
+</style><img class="background" src="__BACKGROUND_DATA__" alt="" aria-hidden="true"><div class="mode-area"><div class="mode-switch" role="group" aria-label="Timer mode"><button id="mode-stopwatch" aria-pressed="true" title="Switching modes pauses your current timer">Stopwatch</button><button id="mode-pomodoro" aria-pressed="false" title="25-minute focus, 5-minute break">Pomodoro</button><button id="mode-timer" aria-pressed="false" title="Simple countdown timer">Timer</button></div><div class="session-row"><div class="session-label" id="session-label" role="status" aria-live="polite" hidden></div></div></div><section class="tasks" id="tasks" aria-label="Today’s tasks"><button type="button" class="tasks-pill" id="tasks-pill" aria-expanded="false" aria-controls="tasks-panel"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m4 7 1.6 1.6L8.8 5.4M4 15.5l1.6 1.6 3.2-3.2M12 7h8M12 15.5h8"/></svg><span id="tasks-pill-label">Tasks</span></button><div class="tasks-panel" id="tasks-panel"><div class="tasks-head"><h2>Today</h2><button type="button" id="history-open" aria-label="Task history" title="Task history" aria-haspopup="dialog"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12a8 8 0 1 0 2.4-5.7L4 8.6M4 4.5v4.1h4.1M12 8v4.4l2.9 1.8"/></svg></button></div><ol class="task-list" id="task-list"></ol><form class="task-add" id="task-add"><span aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 6.5v11M6.5 12h11"/></svg></span><input id="task-input" maxlength="80" autocomplete="off" spellcheck="false" placeholder="Add a task" aria-label="Add a task"></form></div></section><main><div class="time" role="timer" aria-label="Elapsed time"><span class="current-task" id="current-task" aria-hidden="true" hidden></span><span id="hours" hidden></span><span id="hours-separator" class="sep" hidden>:</span><span id="minutes"></span><span class="sep">:</span><span id="seconds"></span></div><div class="interface"><div class="timer-adjust" id="timer-adjust" hidden><div class="adjust-rail left" role="group" aria-label="Adjust by 5 minutes"><button data-adjust="-5" aria-label="Subtract 5 minutes" title="Subtract 5 minutes"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 12h12"/></svg></button><span>5 min</span><button data-adjust="5" aria-label="Add 5 minutes" title="Add 5 minutes"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 12h12M12 6v12"/></svg></button></div><div class="adjust-rail right" role="group" aria-label="Adjust by 10 minutes"><button data-adjust="-10" aria-label="Subtract 10 minutes" title="Subtract 10 minutes"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 12h12"/></svg></button><span>10 min</span><button data-adjust="10" aria-label="Add 10 minutes" title="Add 10 minutes"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 12h12M12 6v12"/></svg></button></div></div><div class="controls"><button id="toggle" class="primary" aria-label="Start" title="Start" data-icon="play"><svg class="play-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5 18 12 8 18.5Z"/></svg><svg class="pause-icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="6.5" y="5" width="4" height="14" rx="1"/><rect x="13.5" y="5" width="4" height="14" rx="1"/></svg></button><button id="reset" aria-label="Reset" title="Reset" disabled><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 10a8 8 0 1 1 1.5 7M4 4v6h6"/></svg></button><button id="background-next" aria-label="Next background" title="Next background"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="3"/><circle cx="8" cy="9" r="1.5"/><path d="m4 17 5-5 4 4 3-3 5 5"/></svg></button><button id="settings-cog" aria-label="Pomodoro settings" title="Pomodoro settings" aria-haspopup="dialog" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 3-.6 2.2-1.6.9-2.2-.6-3 5.2 1.6 1.6v1.8l-1.6 1.6 3 5.2 2.2-.6 1.6.9L9 23h6l.6-2.2 1.6-.9 2.2.6 3-5.2-1.6-1.6v-1.8l1.6-1.6-3-5.2-2.2.6-1.6-.9L15 3Z" transform="translate(1.2 -1.2) scale(.9)"/><circle cx="12" cy="10.5" r="3"/></svg></button></div><div class="hint">Space to start / pause · R to reset</div></div></main><dialog class="settings-pane" id="pomodoro-settings" aria-labelledby="settings-title" aria-describedby="settings-note">
 <form id="settings-form">
 <header><h2 id="settings-title">Pomodoro</h2><button type="button" id="settings-close" aria-label="Close settings" title="Close settings"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"/></svg></button></header>
 <div class="settings-presets" role="group" aria-label="Timing preset"><button type="button" data-preset="25,5,15" aria-pressed="true">25 / 5</button><button type="button" data-preset="50,10,30" aria-pressed="false">50 / 10</button><button type="button" data-preset="custom" aria-pressed="false">Custom</button></div>
 <div class="settings-fields"><label>Focus · min<input id="focus-minutes" type="number" min="1" max="180" step="1" required value="25"></label><label>Break · min<input id="break-minutes" type="number" min="1" max="180" step="1" required value="5"></label><label>Long break · min<input id="long-break-minutes" type="number" min="1" max="180" step="1" required value="15"></label></div>
 <p class="settings-note" id="settings-note">Long break after every 4 focus sessions.<br>New timings start a fresh, paused focus session.</p>
 <div class="settings-actions"><button type="submit" id="settings-apply">Apply timings</button><button type="button" id="settings-reset-session" aria-label="Reset Pomodoro cycle" title="Reset Pomodoro cycle"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 10a8 8 0 1 1 1.5 7M4 4v6h6"/></svg></button></div>
-</form></dialog><script type="module">
+</form></dialog><dialog class="settings-pane history-pane" id="history" aria-labelledby="history-title">
+<header><h2 id="history-title">Task history</h2><button type="button" id="history-close" aria-label="Close history" title="Close history"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"/></svg></button></header>
+<div id="history-body"></div>
+</dialog><script type="module">
 
 {
 function stationaryDigits(host){
@@ -144,20 +209,25 @@ document.querySelector('#settings-form').onsubmit=event=>{
 };
 const modeArea=document.querySelector('.mode-area');
 const timerAdjust=document.querySelector('#timer-adjust');
+const tasksBox=document.querySelector('#tasks'),tasksPill=document.querySelector('#tasks-pill'),historyPane=document.querySelector('#history');
+let taskDrag=null;
+// Typing or dragging a task keeps the list awake even when the mouse is still.
+const tasksBusy=()=>Boolean(taskDrag||document.activeElement?.closest('.tasks input'));
+function setTasksOpen(open){tasksBox.classList.toggle('open',open);tasksPill.setAttribute('aria-expanded',String(open))}
 let replayClick=null;
 function wake(event){
   const returning=document.body.classList.contains('idle');
   if(returning&&event?.type==='pointermove'&&!event.buttons&&!event.target.closest('button,.pixel-cat,dialog')&&
-     document.body.dataset.timerRunning==='true'&&!settingsPane.open&&!document.hidden){
+     document.body.dataset.timerRunning==='true'&&!settingsPane.open&&!historyPane.open&&!document.hidden){
     window.dispatchEvent(new Event('cat:focus-nudge'));
   }
-  document.body.classList.remove('idle');surface.inert=false;modeArea.inert=false;timerAdjust.inert=false;clearTimeout(idleTimer);
+  document.body.classList.remove('idle');surface.inert=false;modeArea.inert=false;timerAdjust.inert=false;tasksBox.inert=false;clearTimeout(idleTimer);
   if(event?.type==='pointerdown'){
-    // Faded controls were not hit-testable when this press began, so find the button now they are back.
-    const button=returning&&event.button===0?document.elementFromPoint(event.clientX,event.clientY)?.closest('button'):null;
+    // Faded controls were not hit-testable when this press began, so find the button or task field now they are back.
+    const button=returning&&event.button===0?document.elementFromPoint(event.clientX,event.clientY)?.closest('button,.tasks input'):null;
     replayClick=button&&!button.disabled&&button!==event.target.closest('button')?button:null;
   }
-  if(event?.type==='click'&&replayClick){const button=replayClick;replayClick=null;if(!event.target.closest('button'))button.click()}idleTimer=setTimeout(()=>{if(sessionComplete||settingsPane.open||document.querySelector('.pixel-cat')?.dataset.dragging==='true')return;document.body.classList.add('idle');surface.inert=true;modeArea.inert=true;timerAdjust.inert=true},3500)}
+  if(event?.type==='click'&&replayClick){const button=replayClick;replayClick=null;if(!event.target.closest('button')){if(button.matches('input'))button.focus();else button.click()}}idleTimer=setTimeout(()=>{if(sessionComplete||settingsPane.open||historyPane.open||tasksBusy()||document.querySelector('.pixel-cat')?.dataset.dragging==='true')return;document.body.classList.add('idle');surface.inert=true;modeArea.inert=true;timerAdjust.inert=true;tasksBox.inert=true;setTasksOpen(false)},3500)}
 for(const event of ['pointermove','pointerdown','click','keydown'])document.addEventListener(event,wake,{capture:true,passive:true});
 wake();
 const background=document.querySelector('.background');
@@ -276,13 +346,174 @@ window.render=state=>{
     setText('#session-label',message);
   }
   setText('.hint',countdown?'＋ / − for 1 min · Space to start / pause':pomodoro&&!running&&elapsed===0?`${state.focusMinutes} min focus · ${state.breakMinutes} min break · long break after 4`:'Space to start / pause · R to reset');
+  renderTasks(state.tasks||[],state.tracking===true);
 };
 document.querySelector('#mode-stopwatch').onclick=()=>send('mode:stopwatch');
 document.querySelector('#mode-pomodoro').onclick=()=>send('mode:pomodoro');
 document.querySelector('#mode-timer').onclick=()=>send('mode:timer');
 timerAdjust.querySelectorAll('button').forEach(button=>button.onclick=()=>send('adjust:'+button.dataset.adjust));
+const taskList=document.querySelector('#task-list'),taskForm=document.querySelector('#task-add'),taskInput=document.querySelector('#task-input');
+const currentTask=document.querySelector('#current-task');
+let taskSignature='',taskEditing=false,latestTasks={tasks:[],tracking:false},focusAfterBuild=null;
+function formatDuration(seconds){
+  const minutes=Math.floor(seconds/60);
+  if(minutes<1)return seconds>=1?`${Math.floor(seconds)}s`:'';
+  return minutes<60?`${minutes}m`:`${Math.floor(minutes/60)}h ${String(minutes%60).padStart(2,'0')}m`;
+}
+const checkIcon='<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8"/><path class="tick" d="m8.6 12.3 2.3 2.3 4.5-4.8"/></svg>';
+const removeIcon='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m8 8 8 8M16 8l-8 8"/></svg>';
+function buildTasks(tasks){
+  taskList.replaceChildren(...tasks.map(task=>{
+    const row=document.createElement('li');row.className='task';row.dataset.id=task.id;row.classList.toggle('done',task.done);
+    const check=document.createElement('button');check.type='button';check.className='task-check';check.innerHTML=checkIcon;
+    check.setAttribute('aria-pressed',String(task.done));check.setAttribute('aria-label',`Done: ${task.title}`);check.title=task.done?'Mark as not done':'Mark as done';
+    check.onclick=()=>send(`task-done:${task.id}:${task.done?0:1}`);
+    const title=document.createElement('span');title.className='task-title';title.tabIndex=0;title.textContent=task.title;
+    title.title=task.done?task.title:`${task.title}\nDrag to reorder · click to rename`;
+    const time=document.createElement('span');time.className='task-time';
+    const remove=document.createElement('button');remove.type='button';remove.className='task-remove';remove.innerHTML=removeIcon;
+    remove.setAttribute('aria-label',`Remove ${task.title}`);remove.title='Remove';remove.onclick=()=>send('task-delete:'+task.id);
+    row.append(check,title,time,remove);
+    return row;
+  }));
+  if(focusAfterBuild){taskList.querySelector(`[data-id="${focusAfterBuild}"] .task-title`)?.focus();focusAfterBuild=null}
+}
+function renderTasks(tasks,tracking){
+  latestTasks={tasks,tracking};
+  const signature=JSON.stringify(tasks.map(task=>[task.id,task.title,task.done]));
+  // Rebuild only when the list itself changes, and never under a drag or an open edit.
+  if(signature!==taskSignature&&!taskDrag&&!taskEditing){taskSignature=signature;buildTasks(tasks)}
+  const active=tasks.find(task=>!task.done);
+  for(const row of taskList.children){
+    const task=tasks.find(item=>item.id===row.dataset.id);if(!task)continue;
+    row.classList.toggle('active',task===active);row.classList.toggle('tracking',task===active&&tracking);
+    const time=row.querySelector('.task-time'),text=formatDuration(task.seconds);if(time&&time.textContent!==text)time.textContent=text;
+  }
+  const full=tasks.length>=3;
+  taskForm.hidden=full&&!tasks.some(task=>task.done);
+  taskInput.placeholder=tasks.length?'Add a task':'What will you get done today?';
+  taskInput.title=full?'Adding a task clears the finished one':'';
+  setText('#tasks-pill-label',active?active.title:tasks.length?'All done':'Tasks');
+  tasksPill.title=active?`Now: ${active.title}`:'Today’s tasks';
+  currentTask.hidden=!active;if(active&&currentTask.textContent!==active.title)currentTask.textContent=active.title;
+}
+function editTask(row){
+  const title=row.querySelector('.task-title');if(!title)return;
+  const input=document.createElement('input');input.className='task-edit';input.maxLength=80;input.spellcheck=false;input.value=title.textContent;input.setAttribute('aria-label','Rename task');
+  taskEditing=true;title.replaceWith(input);input.focus();input.select();
+  let open=true;
+  const finish=save=>{
+    if(!open)return;open=false;taskEditing=false;
+    const value=input.value.trim(),focused=document.activeElement===input;
+    if(save&&value&&value!==title.textContent){title.textContent=value;if(focused)focusAfterBuild=row.dataset.id;send(`task-edit:${row.dataset.id}:${value}`)}
+    input.replaceWith(title);if(focused)title.focus();
+    renderTasks(latestTasks.tasks,latestTasks.tracking);
+  };
+  input.addEventListener('keydown',event=>{
+    if(event.key==='Enter'){event.preventDefault();finish(true)}
+    else if(event.key==='Escape'){event.preventDefault();event.stopPropagation();finish(false)}
+  });
+  input.addEventListener('blur',()=>finish(true));
+}
+// Pointer dragging, so rows slide into place. A press without movement renames instead.
+taskList.addEventListener('pointerdown',event=>{
+  const title=event.target.closest('.task-title');
+  if(!title||event.button!==0||taskDrag||taskEditing)return;
+  event.preventDefault();
+  const row=title.closest('.task'),rows=[...taskList.querySelectorAll('.task:not(.done)')];
+  taskDrag={row,title,rows,pointerId:event.pointerId,startY:event.clientY,moved:false,from:rows.indexOf(row),to:rows.indexOf(row),step:row.offsetHeight};
+  title.setPointerCapture(event.pointerId);
+});
+taskList.addEventListener('pointermove',event=>{
+  const drag=taskDrag;
+  if(!drag||event.pointerId!==drag.pointerId||drag.from<0)return;
+  const offset=event.clientY-drag.startY;
+  if(!drag.moved&&Math.abs(offset)<4)return;
+  drag.moved=true;drag.row.classList.add('dragging');
+  const clamped=Math.max(-drag.from*drag.step,Math.min((drag.rows.length-1-drag.from)*drag.step,offset));
+  drag.to=drag.from+Math.round(clamped/drag.step);
+  drag.row.style.transform=`translateY(${clamped}px)`;
+  drag.rows.forEach((row,index)=>{
+    if(row===drag.row)return;
+    const shift=index>drag.from&&index<=drag.to?-drag.step:index<drag.from&&index>=drag.to?drag.step:0;
+    row.style.transform=shift?`translateY(${shift}px)`:'';
+  });
+});
+function endTaskDrag(event,commit){
+  const drag=taskDrag;
+  if(!drag||event.pointerId!==drag.pointerId)return;
+  taskDrag=null;
+  if(drag.title.hasPointerCapture(event.pointerId))drag.title.releasePointerCapture(event.pointerId);
+  if(!drag.moved){if(commit)editTask(drag.row);return}
+  // Place rows in their new order without animating back from the old one.
+  taskList.classList.add('settling');drag.row.classList.remove('dragging');
+  drag.rows.forEach(row=>row.style.transform='');
+  if(commit&&drag.to!==drag.from){
+    if(drag.to>drag.from)drag.rows[drag.to].after(drag.row);else drag.rows[drag.to].before(drag.row);
+    send(`task-move:${drag.row.dataset.id}:${drag.to}`);
+  }
+  taskList.offsetHeight;taskList.classList.remove('settling');
+  renderTasks(latestTasks.tasks,latestTasks.tracking);
+}
+taskList.addEventListener('pointerup',event=>endTaskDrag(event,true));
+taskList.addEventListener('pointercancel',event=>endTaskDrag(event,false));
+taskList.addEventListener('keydown',event=>{
+  const title=event.target.closest('.task-title');if(!title)return;
+  const row=title.closest('.task');
+  if(event.key==='Enter'){event.preventDefault();editTask(row);return}
+  if(!event.altKey||!['ArrowUp','ArrowDown'].includes(event.key)||row.classList.contains('done'))return;
+  event.preventDefault();
+  const rows=[...taskList.querySelectorAll('.task:not(.done)')],target=rows.indexOf(row)+(event.key==='ArrowUp'?-1:1);
+  if(target<0||target>=rows.length)return;
+  focusAfterBuild=row.dataset.id;send(`task-move:${row.dataset.id}:${target}`);
+});
+taskForm.onsubmit=event=>{event.preventDefault();const value=taskInput.value.trim();if(value)send('task-add:'+value);taskInput.value=''};
+taskInput.addEventListener('keydown',event=>{if(event.key==='Escape'&&taskInput.value){event.stopPropagation();taskInput.value=''}});
+tasksBox.addEventListener('keydown',event=>{
+  if(event.key!=='Escape')return;
+  if(tasksBox.classList.contains('open')){setTasksOpen(false);tasksPill.focus()}else document.activeElement?.blur();
+});
+tasksPill.onclick=()=>{const open=!tasksBox.classList.contains('open');setTasksOpen(open);if(open&&!latestTasks.tasks.length)taskInput.focus()};
+document.addEventListener('pointerdown',event=>{if(tasksBox.classList.contains('open')&&!tasksBox.contains(event.target))setTasksOpen(false)});
+const historyBody=document.querySelector('#history-body'),modeNames={pomodoro:'Pomodoro',stopwatch:'Stopwatch',timer:'Timer'};
+let historyRefresh=0;
+document.querySelector('#history-open').onclick=()=>{
+  setTasksOpen(false);send('history');historyPane.showModal();
+  // Keep a running session's total current while the history is open.
+  clearInterval(historyRefresh);historyRefresh=setInterval(()=>send('history'),1000);wake();
+};
+document.querySelector('#history-close').onclick=()=>historyPane.close();
+historyPane.addEventListener('close',()=>{clearInterval(historyRefresh);wake()});
+historyPane.addEventListener('click',event=>{if(event.target===historyPane){const r=historyPane.getBoundingClientRect();if(event.clientX<r.left||event.clientX>r.right||event.clientY<r.top||event.clientY>r.bottom)historyPane.close()}});
+window.renderHistory=days=>{
+  if(!historyPane.open)return;
+  if(!days.length){
+    const empty=document.createElement('p');empty.className='history-empty';
+    empty.textContent='Nothing tracked yet. Add a task, then press play: time goes to the task at the top of your list.';
+    historyBody.replaceChildren(empty);return;
+  }
+  const now=new Date(),today=new Date(now.getFullYear(),now.getMonth(),now.getDate());
+  const scroll=historyPane.scrollTop;
+  historyBody.replaceChildren(...days.map(day=>{
+    const [year,month,date]=day.date.split('-').map(Number),when=new Date(year,month-1,date),ago=Math.round((today-when)/864e5);
+    const section=document.createElement('section');section.className='history-day';
+    const heading=document.createElement('h3'),name=document.createElement('span'),total=document.createElement('span');
+    name.textContent=ago===0?'Today':ago===1?'Yesterday':when.toLocaleDateString(undefined,{weekday:'short',day:'numeric',month:'short',...(year!==now.getFullYear()&&{year:'numeric'})});
+    total.textContent=formatDuration(day.tasks.reduce((sum,task)=>sum+task.seconds,0));heading.append(name,total);
+    const list=document.createElement('ul');
+    list.append(...day.tasks.map(task=>{
+      const item=document.createElement('li'),title=document.createElement('span'),time=document.createElement('span'),modes=document.createElement('span');
+      title.className='history-title';title.classList.toggle('finished',task.finished);title.textContent=task.title;
+      time.className='history-time';time.textContent=formatDuration(task.seconds);
+      modes.className='history-modes';modes.textContent=['pomodoro','stopwatch','timer'].filter(mode=>task[mode]>=1).map(mode=>`${modeNames[mode]} ${formatDuration(task[mode])}`).join(' · ');
+      item.append(title,time,modes);return item;
+    }));
+    section.append(heading,list);return section;
+  }));
+  historyPane.scrollTop=scroll;
+};
 document.querySelector('#toggle').onclick=()=>send('toggle');document.querySelector('#reset').onclick=()=>send('reset');document.addEventListener('keydown',e=>{
-  if(settingsPane.open)return;
+  if(settingsPane.open||historyPane.open)return;
   if(e.repeat||e.metaKey||e.ctrlKey||e.altKey||e.target.closest('input,textarea,select,[contenteditable=true]'))return;
   if(e.code==='Space'&&e.target.closest('button'))return;
   if(e.code==='Space'){e.preventDefault();send('toggle')}

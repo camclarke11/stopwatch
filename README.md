@@ -5,6 +5,7 @@ A quiet macOS stopwatch, Pomodoro and countdown timer, with large DynaPuff numbe
 - Stopwatch, countdown and Pomodoro modes
 - 25/5 and 50/10 presets, plus custom focus and break durations
 - Reset the four-focus Pomodoro cycle from Pomodoro settings at any time
+- A three-task list for the day in the top-left corner. Drag to reorder, click a task to rename it, and tick it off to sink it to the bottom. The top unfinished task collects time whenever any timer runs (Pomodoro breaks excluded), shows above the enlarged clock when the controls fade, and every session is kept in a day-by-day history (the clock icon in the list). Task data is stored in `~/Library/Application Support/Stewie/tasks.json`
 - A small wallpaper button beside Reset cycles through the backgrounds
 - Playful cat reminders when mouse movement interrupts any running timer, with gentler lines during Pomodoro breaks
 - Full-screen layout and controls that fade when the mouse is idle
