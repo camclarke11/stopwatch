@@ -1,5 +1,9 @@
 # Releases
 
+## 1.0.10
+
+- The current task shown above the clock while the controls are faded is now quieter, at half opacity.
+
 ## 1.0.9
 
 - Add a three-task list for the day in the top-left corner. Drag tasks to reorder them, click one to rename it, and tick it off to sink it to the bottom with a strikethrough.
