@@ -3,6 +3,8 @@ import Foundation
 struct Track: Codable, Equatable {
     var seconds: Int
     var title: String
+    // What the comment says about the track, such as a footnote marker's meaning from its legend.
+    var note: String? = nil
 }
 
 // A pasted YouTube song or mix, kept between launches.
@@ -48,6 +50,7 @@ enum Tracklist {
     // Timestamps with titles, in ascending order, inside the video and free of duplicates.
     static func parse(_ text: String, duration: Int?) -> [Track] {
         var found: [Track] = []
+        let footnotes = legend(text)
         for rawLine in text.components(separatedBy: .newlines) {
             let line = String(rawLine.unicodeScalars.filter { !invisible.contains($0) })
             let ns = line as NSString
@@ -68,7 +71,8 @@ enum Tracklist {
                 // "Title 3:45" puts the name first.
                 if title.isEmpty, index == 0 { title = clean(ns.substring(to: match.range.location)) }
                 if !title.isEmpty, let seconds = seconds(ns.substring(with: match.range)), duration.map({ seconds < $0 }) ?? true {
-                    found.append(Track(seconds: seconds, title: title))
+                    let (name, note) = annotate(title, footnotes)
+                    if !name.isEmpty { found.append(Track(seconds: seconds, title: shorten(name, titleLimit), note: note.map { shorten($0, 2 * titleLimit) })) }
                 }
                 index += used
             }
@@ -88,12 +92,60 @@ enum Tracklist {
     private static let timestamp = try! NSRegularExpression(pattern: #"(?<![\d:.])\d{1,3}(?::\d{2}){1,2}(?![\d:])"#)
     private static let invisible: Set<Unicode.Scalar> = ["\u{200B}", "\u{200C}", "\u{200D}", "\u{2060}", "\u{FEFF}", "\u{00AD}"]
     private static let leading = CharacterSet.whitespaces.union(CharacterSet(charactersIn: "-–—|:•·*>~=,.;)]}"))
-    private static let trailing = CharacterSet.whitespaces.union(CharacterSet(charactersIn: "-–—|:•·*~=,;[({"))
+    // Asterisks and other marks at the end of a title are footnote markers, so they stay.
+    private static let trailing = CharacterSet.whitespaces.union(CharacterSet(charactersIn: "-–—|:•·=,;[({"))
     private static let numbering = try! NSRegularExpression(pattern: #"^(?:#?\d{1,3}[.)]|#\d{1,3})\s+"#)
     // Characters a comment lost in transit come through as runs of question marks.
     private static let unreadable = try! NSRegularExpression(pattern: #"\?{3,}$"#)
-    // Footnote markers like "Song - Artist ** (alt, ...)" start a note about the track, not its name.
-    private static let footnote = try! NSRegularExpression(pattern: #"\s\*+(?:\s.*)?$"#)
+    // A legend line such as "* = unreleased", "** - released on SoundCloud" or "(U): unreleased".
+    private static let legendLine = try! NSRegularExpression(pattern: #"^\s*([*†‡^+~°#]{1,3}|\([A-Za-z*†‡]{1,3}\)|\[[A-Za-z*†‡]{1,3}\])\s*(?:=|:|-|–|—|means)\s*(\S.*)$"#)
+
+    static func legend(_ text: String) -> [(marker: String, meaning: String)] {
+        var entries: [(marker: String, meaning: String)] = []
+        for line in text.components(separatedBy: .newlines) {
+            let ns = line as NSString
+            guard timestamp.firstMatch(in: line, range: NSRange(location: 0, length: ns.length)) == nil,
+                  let match = legendLine.firstMatch(in: line, range: NSRange(location: 0, length: ns.length)) else { continue }
+            let marker = ns.substring(with: match.range(at: 1))
+            var meaning = ns.substring(with: match.range(at: 2)).trimmingCharacters(in: .whitespaces)
+            // Keep the first sentence; the rest usually explains the note's format.
+            if let stop = meaning.range(of: ". ") { meaning = String(meaning[..<stop.lowerBound]) }
+            meaning = meaning.trimmingCharacters(in: CharacterSet(charactersIn: ". "))
+            guard !meaning.isEmpty, !entries.contains(where: { $0.marker == marker }) else { continue }
+            entries.append((marker, meaning.prefix(1).uppercased() + meaning.dropFirst()))
+        }
+        // Match "**" before "*".
+        return entries.sorted { $0.marker.count > $1.marker.count }
+    }
+
+    // Splits "Song - Artist ** (alt, \"name\")" into the song and a note built from the legend.
+    // Markers the comment never explains stay in the title as written.
+    static func annotate(_ title: String, _ legend: [(marker: String, meaning: String)]) -> (String, String?) {
+        let ns = title as NSString
+        for entry in legend {
+            let pattern = "(?:^|\\s)" + NSRegularExpression.escapedPattern(for: entry.marker) + "(?=\\s|$|\\()"
+            guard let match = try? NSRegularExpression(pattern: pattern).firstMatch(in: title, range: NSRange(location: 0, length: ns.length)) else { continue }
+            let name = trim(ns.substring(to: match.range.location))
+            var detail = ns.substring(from: NSMaxRange(match.range)).trimmingCharacters(in: .whitespaces)
+            if detail.hasPrefix("("), detail.hasSuffix(")"), balanced(String(detail.dropFirst().dropLast())) { detail = String(detail.dropFirst().dropLast()) }
+            // "* Song" puts the marker first.
+            if name.isEmpty { return detail.isEmpty ? (title, nil) : (trim(detail), entry.meaning) }
+            return (name, [entry.meaning, detail].filter { !$0.isEmpty }.joined(separator: " · "))
+        }
+        return (title, nil)
+    }
+
+    private static func balanced(_ text: String) -> Bool {
+        var depth = 0
+        for character in text {
+            if character == "(" { depth += 1 } else if character == ")" { depth -= 1; if depth < 0 { return false } }
+        }
+        return depth == 0
+    }
+
+    private static func shorten(_ text: String, _ limit: Int) -> String {
+        text.count > limit ? String(text.prefix(limit - 1)).trimmingCharacters(in: .whitespaces) + "…" : text
+    }
 
     private static func trim(_ text: String) -> String {
         var scalars = Substring(text).unicodeScalars
@@ -104,11 +156,10 @@ enum Tracklist {
 
     private static func clean(_ text: String) -> String {
         var title = trim(text)
-        for pattern in [numbering, unreadable, footnote] {
+        for pattern in [numbering, unreadable] {
             title = trim(pattern.stringByReplacingMatches(in: title, range: NSRange(location: 0, length: (title as NSString).length), withTemplate: ""))
         }
         title = title.split(whereSeparator: \.isWhitespace).joined(separator: " ")
-        if title.count > titleLimit { title = String(title.prefix(titleLimit - 1)).trimmingCharacters(in: .whitespaces) + "…" }
         return title.rangeOfCharacter(from: .alphanumerics) == nil ? "" : title
     }
 

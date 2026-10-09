@@ -76,7 +76,7 @@ final class App: NSObject, NSApplicationDelegate, WKScriptMessageHandler, WKNavi
         var payload: [String: Any] = [:]
         if let music {
             payload = ["id": music.id, "title": music.title, "author": music.author, "thumbnail": music.thumbnail,
-                       "tracks": music.tracks.map { ["seconds": $0.seconds, "title": $0.title] as [String: Any] }]
+                       "tracks": music.tracks.map { ["seconds": $0.seconds, "title": $0.title, "note": $0.note ?? ""] as [String: Any] }]
         }
         if let status { payload["status"] = status }
         guard let data = try? JSONSerialization.data(withJSONObject: payload), let json = String(data: data, encoding: .utf8) else { return }

@@ -176,6 +176,7 @@ body.idle .music{opacity:0;pointer-events:none}
 .music-tracks button:hover{background:#ffffff1a}
 .music-time{flex:none;min-width:38px;font-variant-numeric:tabular-nums;opacity:.6}
 .music-track-name{min-width:0;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.music-track-name small{display:block;overflow:hidden;text-overflow:ellipsis;font-size:10.5px;opacity:.55}
 @media(max-width:639px){.music-title{display:none}.music .music-video{padding-right:2px}}
 @media(max-width:899px){.music-add{position:relative}.music-add input{position:absolute;top:calc(100% + 6px);right:0;width:min(240px,calc(100vw - 28px));height:34px;padding:0 10px;border:1px solid #ffffff40;border-radius:12px;background:linear-gradient(145deg,#323632e8,#171b1bf2);color:#fffaf0;text-shadow:none;box-shadow:0 14px 44px #0005}.music-note{margin-top:46px}}
 @media(max-width:399px){.mode-area{padding-right:48px}}
@@ -582,9 +583,10 @@ window.renderMusic=state=>{
   document.querySelector('#music-video').title=`${shown.title}${shown.author?` · ${shown.author}`:''}\nOpen in YouTube`;
   musicTracks.replaceChildren(...(shown.tracks||[]).map(track=>{
     const item=document.createElement('li'),button=document.createElement('button'),time=document.createElement('span'),name=document.createElement('span');
-    button.type='button';button.title=`${track.title}\nPlay from ${formatStamp(track.seconds)} on YouTube`;
+    button.type='button';button.title=`${track.title}${track.note?`\n${track.note}`:''}\nPlay from ${formatStamp(track.seconds)} on YouTube`;
     time.className='music-time';time.textContent=formatStamp(track.seconds);
     name.className='music-track-name';name.textContent=track.title;
+    if(track.note){const note=document.createElement('small');note.textContent=track.note;name.append(note)}
     button.append(time,name);button.onclick=()=>send('music-open:'+track.seconds);
     item.append(button);return item;
   }));
