@@ -180,6 +180,11 @@ body.idle .music{opacity:0;pointer-events:none}
 .music-tracks button{display:flex;gap:10px;width:100%;padding:5px 8px;text-align:left;line-height:1.35}
 .music-tracks button:hover{background:#ffffff1a}
 .music-tracks .current button{background:#ffffff24}
+.music-tracks::-webkit-scrollbar,.settings-pane::-webkit-scrollbar{width:10px}
+.music-tracks::-webkit-scrollbar-track,.settings-pane::-webkit-scrollbar-track{background:transparent;margin:8px 0}
+.music-tracks::-webkit-scrollbar-thumb,.settings-pane::-webkit-scrollbar-thumb{border:3px solid transparent;border-radius:999px;background:#fffaf033;background-clip:padding-box}
+.music-tracks::-webkit-scrollbar-thumb:hover,.settings-pane::-webkit-scrollbar-thumb:hover{background-color:#fffaf066}
+.music-tracks::-webkit-scrollbar-corner,.settings-pane::-webkit-scrollbar-corner{background:transparent}
 .music-tracks .current .music-time{opacity:1}
 .music-time{flex:none;min-width:38px;font-variant-numeric:tabular-nums;opacity:.6}
 .music-track-name{min-width:0;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
