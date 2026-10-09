@@ -54,11 +54,6 @@ final class App: NSObject, NSApplicationDelegate, WKScriptMessageHandler, WKNavi
         if action == "music-play", let music { player.play(music.id); return }
         if action == "music-pause" { player.pause(); return }
         if action.hasPrefix("music-seek:"), let music, let seconds = Int(action.dropFirst("music-seek:".count)) { player.play(music.id, from: seconds); return }
-        if action.hasPrefix("music-open:") {
-            guard let music else { return }
-            player.pause()
-            openOnYouTube(music.id, from: Int(action.dropFirst("music-open:".count)) ?? 0); return
-        }
         guard action.hasPrefix("music:") else { return }
         guard let id = Tracklist.videoID(from: String(action.dropFirst("music:".count))) else { sendMusic(status: "invalid"); return }
         musicRequest += 1

@@ -5,7 +5,7 @@
 - Paste a YouTube link to a song or mix into the note in the top-right corner. Its title and a small thumbnail sit in the corner.
 - Click the thumbnail to play or pause the music inside Stewie; no browser needed. While a mix plays, the pill shows the song that's on.
 - For mixes, a small arrow opens the tracklist, taken from the video's comments (or its description when no comment has one). Click a track to jump straight to it, and the playing track is highlighted. Timestamps are checked: they must rise, fall inside the video, and have a song name. Footnote markers such as * are explained under the song using the comment's own legend.
-- A small arrow icon on hover opens the video on YouTube behind Stewie, without switching to the browser. Videos YouTube won't play inside other apps open there the same way.
+- Videos YouTube won't play inside other apps open on YouTube behind Stewie, without switching to the browser.
 - Add an Edit menu so ⌘C, ⌘V and the other text shortcuts work in the app.
 
 ## 1.0.10
