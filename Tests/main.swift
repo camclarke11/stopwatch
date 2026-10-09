@@ -251,6 +251,10 @@ let picked = Tracklist.best(comments: ["the piano at 32:00 is deadly", "0:00 A\n
 check(picked.map(\.title) == ["First", "Second", "Third"], "The fullest comment wins, earlier comments win ties, and the description is only a fallback")
 check(Tracklist.best(comments: ["0:00 A\n3:00 B"], description: "0:00 x\n1:00 y\n2:00 z", duration: nil).map(\.title) == ["x", "y", "z"], "The description is used when no comment has a tracklist")
 check(Tracklist.best(comments: ["great mix 10:00"], description: nil, duration: nil).isEmpty, "A single song has no tracklist")
+// Comments from Overmono's Lost Village 2026 set (bVwguT23r0k): track-ID questions, not a tracklist.
+let overmono = ["Need that unreleased \"Ray Tune\" from Joy Orbison ASAP 36:10", "22:40 TF IS THIS?!?!?!??!?!?!?", "also 23:00 track ID plz",
+                "what is the marianne remix ID at 19:50??", "19:06 song ID?", "I NEED to know what ID is 19:00 😮", "18:58 track ID?", "23:00 what is this wow"]
+check(Tracklist.best(comments: overmono, description: "Live from The Outpost with Defender at Lost Village 2026... 🌲", duration: nil).isEmpty, "Scattered track-ID questions are not stitched into a tracklist")
 let response: [String: Any] = ["onResponseReceivedEndpoints": [["reloadContinuationItemsCommand": ["continuationItems": [
     ["commentThreadRenderer": ["replies": ["commentRepliesRenderer": ["contents": [["continuationItemRenderer": ["continuationEndpoint": ["continuationCommand": ["token": "replies"]]]]]]]]],
     ["continuationItemRenderer": ["continuationEndpoint": ["continuationCommand": ["token": "page2"]]]]]]]],
