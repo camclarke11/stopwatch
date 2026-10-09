@@ -268,6 +268,11 @@ check(riotTracks.map(\.title) == ["Set intro - Virtual Riot", "Lost It - VIP (VI
 check(riotTracks.map(\.note) == [nil, "Released on SoundCloud under his main or alt \"RiotVirtual\" · alt, \"lost it (vip show edit)\"", "Unreleased", "Unreleased · potentially Anybody (Virtual Riot Remix) - Skrillex x ISOxo", nil], "Markers become notes using the comment's own legend")
 let otherLegend = Tracklist.parse("0:00 Intro †\n3:00 (U) Second Song\n6:00 Third Song *\n† - edit\n(U): unreleased", duration: nil)
 check(otherLegend.map(\.title) == ["Intro", "Second Song", "Third Song *"] && otherLegend.map(\.note) == ["Edit", "Unreleased", nil], "Other legend styles work, and markers the comment never explains stay as written")
+// From the tracklist comment on Overmono's Boiler Room Manchester set (xgJBhezlMoE).
+check(Tracklist.parse("2:41 - gunk\n12:00 - freedom 2\n16:05 - 🚀\n26:00 - turn the page\n1:06:43 - good lies\n1:07:24 (lewis on shoulders maybe)", duration: nil).map(\.title) == ["gunk", "freedom 2", "turn the page", "good lies"], "Emoji-only and bracketed remarks are not songs")
+// From the tracklist comment on the Overmono, Fred again.. & Lil Yachty Lot Radio set (9Stt4wq3KCE).
+let lot = Tracklist.parse("Tracklist:\n(19:30) ID – ID\n(22:30) Joy Orbison – Flight Fm (XL)\nw/ Lil Yachty & Future & Playboi Carti – Flex Up (QUALITY CONTROL)\n(26:30) ID – ID\nLet me know if I missed anything", duration: nil)
+check(lot.map(\.title) == ["ID – ID", "Joy Orbison – Flight Fm (XL)", "ID – ID"] && lot.map(\.note) == [nil, "w/ Lil Yachty & Future & Playboi Carti – Flex Up (QUALITY CONTROL)", nil], "A \"w/\" line under a track becomes its note; other loose lines are ignored")
 // Comments from Overmono's Lost Village 2026 set (bVwguT23r0k): track-ID questions, not a tracklist.
 let overmono = ["Need that unreleased \"Ray Tune\" from Joy Orbison ASAP 36:10", "22:40 TF IS THIS?!?!?!??!?!?!?", "also 23:00 track ID plz",
                 "what is the marianne remix ID at 19:50??", "19:06 song ID?", "I NEED to know what ID is 19:00 😮", "18:58 track ID?", "23:00 what is this wow"]

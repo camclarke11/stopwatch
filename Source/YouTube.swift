@@ -31,16 +31,18 @@ enum YouTube {
         return "data:image/jpeg;base64," + data.base64EncodedString()
     }
 
-    // Reads the first two pages of comments, where pinned and top tracklists live.
+    // YouTube shuffles its top comments, so a tracklist can sit several pages down on busy videos.
+    // Reads up to ten pages, stopping once a comment holds a full tracklist.
     static func tracklist(_ id: String) async -> [Track] {
         async let length = duration(id)
         guard let watch = try? await next(["videoId": id]) else { return [] }
         var comments: [String] = []
         var token = Tracklist.commentsToken(in: watch)
-        for _ in 0..<2 {
+        for _ in 0..<10 {
             guard let current = token, let page = try? await next(["continuation": current]) else { break }
             comments += Tracklist.comments(in: page)
             token = Tracklist.nextPageToken(in: page)
+            if Tracklist.best(comments: comments, description: nil, duration: nil).count >= Tracklist.fullTracklist { break }
         }
         return Tracklist.best(comments: comments, description: Tracklist.description(in: watch), duration: await length)
     }

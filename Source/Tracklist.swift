@@ -18,6 +18,8 @@ struct MusicLink: Codable, Equatable {
 
 enum Tracklist {
     static let minimumTracks = 3
+    // Enough tracks to stop reading more comments.
+    static let fullTracklist = 8
     static let titleLimit = 120
 
     static func videoID(from text: String) -> String? {
@@ -51,10 +53,23 @@ enum Tracklist {
     static func parse(_ text: String, duration: Int?) -> [Track] {
         var found: [Track] = []
         let footnotes = legend(text)
+        var previousHadTrack = false
         for rawLine in text.components(separatedBy: .newlines) {
             let line = String(rawLine.unicodeScalars.filter { !invisible.contains($0) })
             let ns = line as NSString
             let matches = timestamp.matches(in: line, range: NSRange(location: 0, length: ns.length))
+            // An untimed "w/ …" line under a track says what was mixed with it.
+            if matches.isEmpty {
+                let extra = line.trimmingCharacters(in: .whitespaces)
+                if previousHadTrack, mixedWith.firstMatch(in: extra, range: NSRange(location: 0, length: (extra as NSString).length)) != nil {
+                    let note = [found[found.count - 1].note, extra].compactMap { $0 }.joined(separator: " · ")
+                    found[found.count - 1].note = shorten(note, 2 * titleLimit)
+                }
+                previousHadTrack = false
+                continue
+            }
+            let before = found.count
+            defer { previousHadTrack = found.count > before }
             var index = 0
             while index < matches.count {
                 let match = matches[index]
@@ -70,6 +85,8 @@ enum Tracklist {
                 }
                 // "Title 3:45" puts the name first.
                 if title.isEmpty, index == 0 { title = clean(ns.substring(to: match.range.location)) }
+                // "(crowd on shoulders)" is a remark about the moment, not a song.
+                if title.hasPrefix("("), title.hasSuffix(")"), balanced(String(title.dropFirst().dropLast())) { title = "" }
                 if !title.isEmpty, let seconds = seconds(ns.substring(with: match.range)), duration.map({ seconds < $0 }) ?? true {
                     let (name, note) = annotate(title, footnotes)
                     if !name.isEmpty { found.append(Track(seconds: seconds, title: shorten(name, titleLimit), note: note.map { shorten($0, 2 * titleLimit) })) }
@@ -97,6 +114,7 @@ enum Tracklist {
     private static let numbering = try! NSRegularExpression(pattern: #"^(?:#?\d{1,3}[.)]|#\d{1,3})\s+"#)
     // Characters a comment lost in transit come through as runs of question marks.
     private static let unreadable = try! NSRegularExpression(pattern: #"\?{3,}$"#)
+    private static let mixedWith = try! NSRegularExpression(pattern: #"^(?:w/|with\s|\+\s|&\s|vs\.?\s|x\s|->|→|into\s)"#, options: .caseInsensitive)
     // A legend line such as "* = unreleased", "** - released on SoundCloud" or "(U): unreleased".
     private static let legendLine = try! NSRegularExpression(pattern: #"^\s*([*†‡^+~°#]{1,3}|\([A-Za-z*†‡]{1,3}\)|\[[A-Za-z*†‡]{1,3}\])\s*(?:=|:|-|–|—|means)\s*(\S.*)$"#)
 
