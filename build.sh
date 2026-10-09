@@ -5,7 +5,7 @@ version=$(cat VERSION)
 [[ "$version" =~ '^[0-9]+\.[0-9]+\.[0-9]+$' ]] || { print -u2 'Invalid VERSION'; exit 1; }
 rm -rf Stewie.app Stopwatch.app
 mkdir -p Stewie.app/Contents/MacOS Stewie.app/Contents/Resources
-./Scripts/swiftc.sh Source/main.swift Source/TimerState.swift Source/TaskLog.swift Source/Tracklist.swift Source/YouTube.swift Source/Player.swift Source/GitUpdater.swift -o Stewie.app/Contents/MacOS/Stewie -framework Cocoa -framework WebKit -framework CoreText
+./Scripts/swiftc.sh Source/main.swift Source/TimerState.swift Source/TaskLog.swift Source/Tracklist.swift Source/YouTube.swift Source/Player.swift Source/GitUpdater.swift -o Stewie.app/Contents/MacOS/Stewie -framework Cocoa -framework WebKit -framework CoreText -framework MediaPlayer
 cp Source/index.html Source/pixel-cat.js Source/rolling.js Source/rolling.css Source/ROLLING-LICENSE Source/fonts.css Source/flap-font.css Source/AppIcon.icns Stewie.app/Contents/Resources/
 cp -R Source/Fonts Source/Backgrounds Stewie.app/Contents/Resources/
 cp Scripts/git-update.sh Scripts/replace-app.sh Scripts/migrate-app.sh Stewie.app/Contents/Resources/

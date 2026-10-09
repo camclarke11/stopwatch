@@ -7,6 +7,8 @@ final class Player: NSObject {
     private var videoID: String?
     private var poll: Timer?
     private var requested = 0
+    // 0–100, applied on every check so it holds through loading and ads.
+    var volume = 80
     weak var host: NSView?
     // Called about once a second with ["playing": Bool, "seconds": Double], or ["loading": true] while it starts.
     var onChange: (([String: Any]) -> Void)?
@@ -66,6 +68,7 @@ final class Player: NSObject {
           const p = document.getElementById('movie_player'), v = document.querySelector('video');
           if (document.querySelector('.ytp-error')) return {failed: true};
           if (!p || !p.getCurrentTime || !v) return null;
+          if (p.setVolume && p.getVolume && p.getVolume() !== \(volume)) { p.unMute && p.unMute(); p.setVolume(\(volume)); }
           return {playing: !v.paused && !v.ended, seconds: p.getCurrentTime()};
         })()
         """
