@@ -16,6 +16,8 @@ final class App: NSObject, NSApplicationDelegate, WKScriptMessageHandler, WKNavi
     var backgroundIndex = 0
     var log = TaskLog()
     var logSavedAt = 0.0
+    var music: MusicLink?
+    var musicRequest = 0
     let logURL = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
         .appendingPathComponent("Stewie", isDirectory: true).appendingPathComponent("tasks.json")
     func loadLog() {
@@ -41,6 +43,44 @@ final class App: NSObject, NSApplicationDelegate, WKScriptMessageHandler, WKNavi
         guard let data = try? JSONSerialization.data(withJSONObject: log.history()),
               let json = String(data: data, encoding: .utf8) else { return }
         web.evaluateJavaScript("window.renderHistory(\(json));", completionHandler: nil)
+    }
+    func handleMusic(_ action: String) {
+        if action == "music-clear" {
+            musicRequest += 1; music = nil
+            UserDefaults.standard.removeObject(forKey: "music")
+            sendMusic(); return
+        }
+        if action.hasPrefix("music-open:") {
+            guard let music else { return }
+            var components = URLComponents(string: "https://www.youtube.com/watch")!
+            components.queryItems = [URLQueryItem(name: "v", value: music.id)]
+            if let seconds = Int(action.dropFirst("music-open:".count)), seconds > 0 { components.queryItems?.append(URLQueryItem(name: "t", value: "\(seconds)s")) }
+            NSWorkspace.shared.open(components.url!); return
+        }
+        guard action.hasPrefix("music:") else { return }
+        guard let id = Tracklist.videoID(from: String(action.dropFirst("music:".count))) else { sendMusic(status: "invalid"); return }
+        musicRequest += 1
+        let request = musicRequest
+        sendMusic(status: "loading")
+        Task { @MainActor [weak self] in
+            let link = try? await YouTube.load(id: id)
+            // A newer paste or a removal replaces this one.
+            guard let self, request == self.musicRequest else { return }
+            guard let link else { self.sendMusic(status: "failed"); return }
+            self.music = link
+            if let data = try? JSONEncoder().encode(link) { UserDefaults.standard.set(data, forKey: "music") }
+            self.sendMusic()
+        }
+    }
+    func sendMusic(status: String? = nil) {
+        var payload: [String: Any] = [:]
+        if let music {
+            payload = ["id": music.id, "title": music.title, "author": music.author, "thumbnail": music.thumbnail,
+                       "tracks": music.tracks.map { ["seconds": $0.seconds, "title": $0.title] as [String: Any] }]
+        }
+        if let status { payload["status"] = status }
+        guard let data = try? JSONSerialization.data(withJSONObject: payload), let json = String(data: data, encoding: .utf8) else { return }
+        web.evaluateJavaScript("window.renderMusic(\(json));", completionHandler: nil)
     }
     func migrateLegacyAppIfNeeded() -> Bool {
         let source = Bundle.main.bundleURL.standardizedFileURL
@@ -117,6 +157,17 @@ final class App: NSObject, NSApplicationDelegate, WKScriptMessageHandler, WKNavi
                 UserDefaults.standard.synchronize()
             }
         }
+        // Without an Edit menu, ⌘V and the other text shortcuts do nothing in the web view.
+        let editItem = NSMenuItem(); menu.addItem(editItem)
+        let editMenu = NSMenu(title: "Edit")
+        editMenu.addItem(withTitle: "Undo", action: Selector(("undo:")), keyEquivalent: "z")
+        editMenu.addItem(withTitle: "Redo", action: Selector(("redo:")), keyEquivalent: "Z")
+        editMenu.addItem(NSMenuItem.separator())
+        editMenu.addItem(withTitle: "Cut", action: #selector(NSText.cut(_:)), keyEquivalent: "x")
+        editMenu.addItem(withTitle: "Copy", action: #selector(NSText.copy(_:)), keyEquivalent: "c")
+        editMenu.addItem(withTitle: "Paste", action: #selector(NSText.paste(_:)), keyEquivalent: "v")
+        editMenu.addItem(withTitle: "Select All", action: #selector(NSText.selectAll(_:)), keyEquivalent: "a")
+        editItem.submenu = editMenu
         let viewItem = NSMenuItem(); menu.addItem(viewItem)
         let viewMenu = NSMenu(title: "View")
         let fullScreenItem = NSMenuItem(title: "Toggle Full Screen", action: #selector(NSWindow.toggleFullScreen(_:)), keyEquivalent: "f")
@@ -134,6 +185,7 @@ final class App: NSObject, NSApplicationDelegate, WKScriptMessageHandler, WKNavi
         }
         UserDefaults.standard.removeObject(forKey: "updateCheckpoint")
         loadLog()
+        if let data = UserDefaults.standard.data(forKey: "music") { music = try? JSONDecoder().decode(MusicLink.self, from: data) }
         updater.start()
         let config = WKWebViewConfiguration()
         config.userContentController.add(self, name: "stopwatch")
@@ -172,6 +224,7 @@ final class App: NSObject, NSApplicationDelegate, WKScriptMessageHandler, WKNavi
         guard let action = message.body as? String else { return }
         if action == "background:next" { nextBackground(); return }
         if action == "history" { sendHistory(); return }
+        if action.hasPrefix("music") { handleMusic(action); return }
         let timestamp = now()
         if action.hasPrefix("task-") {
             // Credit the outgoing top task before the list changes.
@@ -179,7 +232,7 @@ final class App: NSObject, NSApplicationDelegate, WKScriptMessageHandler, WKNavi
             if log.handle(action) { render(); saveLog() }
             return
         }
-        if action == "ready" { ready = true }
+        if action == "ready" { ready = true; sendMusic() }
         else {
             log.record(state, at: timestamp)
             if state.handle(action, at: timestamp) { signalCompletion() }

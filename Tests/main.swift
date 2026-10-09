@@ -222,3 +222,43 @@ let taskDecoder = JSONDecoder(); taskDecoder.dateDecodingStrategy = .iso8601
 let reloaded = try! taskDecoder.decode(TaskLog.self, from: taskEncoder.encode(work))
 check(reloaded.tasks == work.tasks && reloaded.archive == work.archive && reloaded.sessions == work.sessions && !reloaded.isTracking, "Tasks and history persist; the open clock does not")
 print("Passed: task time tracking across modes, Pomodoro breaks, reordering, finishing, midnight, history and persistence.")
+check(Tracklist.videoID(from: "https://www.youtube.com/watch?v=i43tkaTXtwI&t=30s") == "i43tkaTXtwI", "Watch link")
+check(Tracklist.videoID(from: " youtu.be/TbAjL4qgzC0?si=abc ") == "TbAjL4qgzC0", "Short link without a scheme")
+check(Tracklist.videoID(from: "https://music.youtube.com/watch?v=pHrGDXEBPGs&list=RD") == "pHrGDXEBPGs", "YouTube Music link")
+check(Tracklist.videoID(from: "https://m.youtube.com/live/pHrGDXEBPGs") == "pHrGDXEBPGs" && Tracklist.videoID(from: "https://www.youtube.com/shorts/pHrGDXEBPGs") == "pHrGDXEBPGs", "Live and Shorts links")
+check(Tracklist.videoID(from: "https://example.com/watch?v=pHrGDXEBPGs") == nil && Tracklist.videoID(from: "https://www.youtube.com/watch?v=short") == nil && Tracklist.videoID(from: "hello") == nil, "Other links are refused")
+let mix = """
+🎶 | Tracklist
+[00:00] Tonion x xander. - Snow In April
+[03:46] Purrple Cat - Dissipate
+05:52 – Amess - Flying Colours (Remix)
+1. 8:34 Yasumu - Forest Waltz [Chillhop]
+11:16 - 12:30 twoscents - Rainy Days
+\u{200B}13:30\u{200B} -  • Kanisan - Dahlia...
+16:42 duplicate time should not replace the first
+16:42 also at 16:42
+Loved the drop at 5:00 💜
+Hoogway - Found You 1:02:29
+2:00:00 past the end
+"""
+let parsed = Tracklist.parse(mix, duration: 7200)
+check(parsed.map(\.seconds) == [0, 226, 352, 514, 676, 810, 1002, 3749], "Rising timestamps survive; strays, repeats and times past the end drop out")
+check(parsed.map(\.title) == ["Tonion x xander. - Snow In April", "Purrple Cat - Dissipate", "Amess - Flying Colours (Remix)", "Yasumu - Forest Waltz [Chillhop]",
+                              "twoscents - Rainy Days", "Kanisan - Dahlia...", "duplicate time should not replace the first", "Hoogway - Found You"], "Titles are cleaned")
+check(Tracklist.parse("00:00 A 03:20 B 07:10 C", duration: nil).map(\.title) == ["A", "B", "C"], "Several tracks on one line")
+check(Tracklist.parse("0:00 One\n4:75 Bad\n1:61:00 Bad\n9:00 Two\n12:00 🎵\n15:00 Three", duration: 600).map(\.title) == ["One", "Two"], "Invalid times, empty titles and times past the end are skipped")
+let picked = Tracklist.best(comments: ["the piano at 32:00 is deadly", "0:00 A\n3:00 B", "0:00 First\n2:00 Second\n4:00 Third", "0:00 Other\n2:00 Other two\n4:00 Other three"], description: "0:00 x\n1:00 y\n2:00 z\n3:00 w", duration: nil)
+check(picked.map(\.title) == ["First", "Second", "Third"], "The fullest comment wins, earlier comments win ties, and the description is only a fallback")
+check(Tracklist.best(comments: ["0:00 A\n3:00 B"], description: "0:00 x\n1:00 y\n2:00 z", duration: nil).map(\.title) == ["x", "y", "z"], "The description is used when no comment has a tracklist")
+check(Tracklist.best(comments: ["great mix 10:00"], description: nil, duration: nil).isEmpty, "A single song has no tracklist")
+let response: [String: Any] = ["onResponseReceivedEndpoints": [["reloadContinuationItemsCommand": ["continuationItems": [
+    ["commentThreadRenderer": ["replies": ["commentRepliesRenderer": ["contents": [["continuationItemRenderer": ["continuationEndpoint": ["continuationCommand": ["token": "replies"]]]]]]]]],
+    ["continuationItemRenderer": ["continuationEndpoint": ["continuationCommand": ["token": "page2"]]]]]]]],
+    "frameworkUpdates": ["entityBatchUpdate": ["mutations": [["payload": ["commentEntityPayload": ["properties": ["content": ["content": "0:00 A"]]]]], ["payload": ["commentEntityPayload": ["properties": ["content": ["content": "nice"]]]]]]]]]
+check(Tracklist.comments(in: response) == ["0:00 A", "nice"] && Tracklist.nextPageToken(in: response) == "page2", "Comments and the next page are read from a YouTube response")
+let watchPage: [String: Any] = ["contents": [["itemSectionRenderer": ["sectionIdentifier": "comment-item-section", "contents": [["continuationItemRenderer": ["continuationEndpoint": ["continuationCommand": ["token": "first"]]]]]]]],
+                            "description": ["attributedDescription": ["content": "About this mix"]]]
+check(Tracklist.commentsToken(in: watchPage) == "first" && Tracklist.description(in: watchPage) == "About this mix", "The comments token and description are read from the watch response")
+let link = MusicLink(id: "i43tkaTXtwI", title: "Mix", author: "Lofi Girl", thumbnail: "", tracks: parsed)
+check(try! JSONDecoder().decode(MusicLink.self, from: JSONEncoder().encode(link)) == link, "The pasted link persists")
+print("Passed: YouTube links, tracklist parsing and cleaning, picking the best comment, and reading YouTube responses.")

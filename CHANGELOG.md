@@ -1,5 +1,11 @@
 # Releases
 
+## 1.0.11
+
+- Paste a YouTube link to a song or mix into the note in the top-right corner. Its title and a small thumbnail sit in the corner, and clicking them opens the video.
+- For mixes, a small arrow opens the tracklist, taken from the video's comments (or its description when no comment has one). Timestamps are checked: they must rise, fall inside the video, and have a song name. Click a track to play from there on YouTube.
+- Add an Edit menu so ⌘C, ⌘V and the other text shortcuts work in the app.
+
 ## 1.0.10
 
 - The current task shown above the clock while the controls are faded is now quieter, at half opacity.

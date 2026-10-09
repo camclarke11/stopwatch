@@ -146,7 +146,42 @@ body.idle .current-task{opacity:.5}
 .history-title.finished::before{content:'✓ ';color:#a6e3ae}
 .history-time{font-variant-numeric:tabular-nums}
 .history-modes{grid-column:1/-1;font-size:11px;color:#fffaf099}
-</style><img class="background" src="__BACKGROUND_DATA__" alt="" aria-hidden="true"><div class="mode-area"><div class="mode-switch" role="group" aria-label="Timer mode"><button id="mode-stopwatch" aria-pressed="true" title="Switching modes pauses your current timer">Stopwatch</button><button id="mode-pomodoro" aria-pressed="false" title="25-minute focus, 5-minute break">Pomodoro</button><button id="mode-timer" aria-pressed="false" title="Simple countdown timer">Timer</button></div><div class="session-row"><div class="session-label" id="session-label" role="status" aria-live="polite" hidden></div></div></div><section class="tasks" id="tasks" aria-label="Today’s tasks"><button type="button" class="tasks-pill" id="tasks-pill" aria-expanded="false" aria-controls="tasks-panel"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m4 7 1.6 1.6L8.8 5.4M4 15.5l1.6 1.6 3.2-3.2M12 7h8M12 15.5h8"/></svg><span id="tasks-pill-label">Tasks</span></button><div class="tasks-panel" id="tasks-panel"><div class="tasks-head"><h2>Today</h2><button type="button" id="history-open" aria-label="Task history" title="Task history" aria-haspopup="dialog"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12a8 8 0 1 0 2.4-5.7L4 8.6M4 4.5v4.1h4.1M12 8v4.4l2.9 1.8"/></svg></button></div><ol class="task-list" id="task-list"></ol><form class="task-add" id="task-add"><span aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 6.5v11M6.5 12h11"/></svg></span><input id="task-input" maxlength="80" autocomplete="off" spellcheck="false" placeholder="Add a task" aria-label="Add a task"></form></div></section><main><div class="time" role="timer" aria-label="Elapsed time"><span class="current-task" id="current-task" aria-hidden="true" hidden></span><span id="hours" hidden></span><span id="hours-separator" class="sep" hidden>:</span><span id="minutes"></span><span class="sep">:</span><span id="seconds"></span></div><div class="interface"><div class="timer-adjust" id="timer-adjust" hidden><div class="adjust-rail left" role="group" aria-label="Adjust by 5 minutes"><button data-adjust="-5" aria-label="Subtract 5 minutes" title="Subtract 5 minutes"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 12h12"/></svg></button><span>5 min</span><button data-adjust="5" aria-label="Add 5 minutes" title="Add 5 minutes"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 12h12M12 6v12"/></svg></button></div><div class="adjust-rail right" role="group" aria-label="Adjust by 10 minutes"><button data-adjust="-10" aria-label="Subtract 10 minutes" title="Subtract 10 minutes"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 12h12"/></svg></button><span>10 min</span><button data-adjust="10" aria-label="Add 10 minutes" title="Add 10 minutes"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 12h12M12 6v12"/></svg></button></div></div><div class="controls"><button id="toggle" class="primary" aria-label="Start" title="Start" data-icon="play"><svg class="play-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5 18 12 8 18.5Z"/></svg><svg class="pause-icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="6.5" y="5" width="4" height="14" rx="1"/><rect x="13.5" y="5" width="4" height="14" rx="1"/></svg></button><button id="reset" aria-label="Reset" title="Reset" disabled><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 10a8 8 0 1 1 1.5 7M4 4v6h6"/></svg></button><button id="background-next" aria-label="Next background" title="Next background"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="3"/><circle cx="8" cy="9" r="1.5"/><path d="m4 17 5-5 4 4 3-3 5 5"/></svg></button><button id="settings-cog" aria-label="Pomodoro settings" title="Pomodoro settings" aria-haspopup="dialog" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 3-.6 2.2-1.6.9-2.2-.6-3 5.2 1.6 1.6v1.8l-1.6 1.6 3 5.2 2.2-.6 1.6.9L9 23h6l.6-2.2 1.6-.9 2.2.6 3-5.2-1.6-1.6v-1.8l1.6-1.6-3-5.2-2.2.6-1.6-.9L15 3Z" transform="translate(1.2 -1.2) scale(.9)"/><circle cx="12" cy="10.5" r="3"/></svg></button></div><div class="hint">Space to start / pause · R to reset</div></div></main><dialog class="settings-pane" id="pomodoro-settings" aria-labelledby="settings-title" aria-describedby="settings-note">
+.music{position:fixed;z-index:3;top:14px;right:14px;display:flex;flex-direction:column;align-items:flex-end;color:var(--clock-ink,#fffaf0);font-size:12px;opacity:1;transition:opacity 1.4s ease}
+body.idle .music{opacity:0;pointer-events:none}
+.music button{width:auto;height:auto;padding:0;border:0;border-radius:8px;background:transparent;color:inherit;font:inherit}
+.music button:hover{filter:none}
+.music button:focus-visible,.music input:focus-visible{outline:2px solid currentColor;outline-offset:1px}
+.music svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+.music-add,.music-now{display:flex;align-items:center;gap:4px;height:39px;padding:0 5px;border:1px solid #ffffff55;border-radius:14px;background:linear-gradient(135deg,#ffffff40,#ffffff16);-webkit-backdrop-filter:blur(28px) saturate(160%);backdrop-filter:blur(28px) saturate(160%);box-shadow:inset 0 1px 0 #ffffff33,0 6px 24px #00000020;text-shadow:var(--clock-shadow,0 1px 3px #0006)}
+.music [hidden]{display:none!important}
+.music .music-add>button,.music .music-toggle,.music .music-clear{display:grid;place-items:center;flex:none;width:28px;height:28px}
+.music .music-add>button:hover,.music .music-toggle:hover,.music .music-clear:hover,.music .music-video:hover{background:#ffffff2e}
+.music-add input{display:none;width:200px;height:26px;padding:0 6px;border:0;border-radius:6px;background:#0000002b;color:inherit;font:inherit;user-select:text;outline:none}
+.music-add input::placeholder{color:inherit;opacity:.65}
+.music.adding .music-add input,.music.loading .music-add input{display:block}
+.music.loading .music-add input{opacity:.6}
+.music.error .music-add input{box-shadow:inset 0 0 0 1px #ff8a80}
+.music .music-video{display:flex;align-items:center;gap:8px;min-width:0;height:31px;padding:0 6px 0 2px}
+.music-video img{flex:none;width:48px;height:27px;border-radius:5px;object-fit:cover;background:#0003}
+.music-video img:not([src]),.music-video img[src=""]{visibility:hidden}
+.music-title{max-width:190px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;font-weight:500}
+.music-toggle svg{transition:transform .2s ease}
+.music-toggle[aria-expanded=true] svg{transform:rotate(180deg)}
+.music .music-clear{display:none}
+.music-now:hover .music-clear,.music .music-clear:focus-visible{display:grid}
+.music-clear svg{width:14px;height:14px}
+.music-note{margin-top:6px;padding:3px 8px;border-radius:6px;background:#171b18b8;color:#fffaf0;font-size:11px}
+.music-tracks{width:min(300px,calc(100vw - 28px));max-height:min(50vh,360px);margin:6px 0 0;padding:6px;list-style:none;overflow:auto;border:1px solid #ffffff40;border-radius:14px;background:linear-gradient(145deg,#323632e8,#171b1bf2);color:#fffaf0;-webkit-backdrop-filter:blur(28px) saturate(160%);backdrop-filter:blur(28px) saturate(160%);box-shadow:0 14px 44px #0005}
+.music-tracks button{display:flex;gap:10px;width:100%;padding:5px 8px;text-align:left;line-height:1.35}
+.music-tracks button:hover{background:#ffffff1a}
+.music-time{flex:none;min-width:38px;font-variant-numeric:tabular-nums;opacity:.6}
+.music-track-name{min-width:0;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+@media(max-width:639px){.music-title{display:none}.music .music-video{padding-right:2px}}
+@media(max-width:899px){.music-add{position:relative}.music-add input{position:absolute;top:calc(100% + 6px);right:0;width:min(240px,calc(100vw - 28px));height:34px;padding:0 10px;border:1px solid #ffffff40;border-radius:12px;background:linear-gradient(145deg,#323632e8,#171b1bf2);color:#fffaf0;text-shadow:none;box-shadow:0 14px 44px #0005}.music-note{margin-top:46px}}
+@media(max-width:399px){.mode-area{padding-right:48px}}
+@media(max-height:360px){.music{top:8px;right:8px}.music-add,.music-now{height:35px}}
+@media(prefers-reduced-motion:reduce){.music,.music-toggle svg{transition:none}}
+</style><img class="background" src="__BACKGROUND_DATA__" alt="" aria-hidden="true"><div class="mode-area"><div class="mode-switch" role="group" aria-label="Timer mode"><button id="mode-stopwatch" aria-pressed="true" title="Switching modes pauses your current timer">Stopwatch</button><button id="mode-pomodoro" aria-pressed="false" title="25-minute focus, 5-minute break">Pomodoro</button><button id="mode-timer" aria-pressed="false" title="Simple countdown timer">Timer</button></div><div class="session-row"><div class="session-label" id="session-label" role="status" aria-live="polite" hidden></div></div></div><section class="tasks" id="tasks" aria-label="Today’s tasks"><button type="button" class="tasks-pill" id="tasks-pill" aria-expanded="false" aria-controls="tasks-panel"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m4 7 1.6 1.6L8.8 5.4M4 15.5l1.6 1.6 3.2-3.2M12 7h8M12 15.5h8"/></svg><span id="tasks-pill-label">Tasks</span></button><div class="tasks-panel" id="tasks-panel"><div class="tasks-head"><h2>Today</h2><button type="button" id="history-open" aria-label="Task history" title="Task history" aria-haspopup="dialog"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12a8 8 0 1 0 2.4-5.7L4 8.6M4 4.5v4.1h4.1M12 8v4.4l2.9 1.8"/></svg></button></div><ol class="task-list" id="task-list"></ol><form class="task-add" id="task-add"><span aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 6.5v11M6.5 12h11"/></svg></span><input id="task-input" maxlength="80" autocomplete="off" spellcheck="false" placeholder="Add a task" aria-label="Add a task"></form></div></section><section class="music" id="music" aria-label="Music"><form class="music-add" id="music-add"><button type="button" id="music-start" aria-label="Add a YouTube song or mix" title="Add a YouTube song or mix"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 17.5V6l10-2v11.5"/><circle cx="6.5" cy="17.5" r="2.5"/><circle cx="16.5" cy="15.5" r="2.5"/></svg></button><input id="music-input" autocomplete="off" spellcheck="false" placeholder="Paste a YouTube link" aria-label="YouTube link"></form><div class="music-now" id="music-now" hidden><button type="button" class="music-video" id="music-video" title="Open in YouTube"><img id="music-thumb" alt=""><span class="music-title" id="music-title"></span></button><button type="button" class="music-toggle" id="music-toggle" aria-expanded="false" aria-controls="music-tracks" aria-label="Tracklist" title="Tracklist" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m7 10 5 5 5-5"/></svg></button><button type="button" class="music-clear" id="music-clear" aria-label="Remove link" title="Remove"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m8 8 8 8M16 8l-8 8"/></svg></button></div><ol class="music-tracks" id="music-tracks" aria-label="Tracklist" hidden></ol><div class="music-note" id="music-note" role="status" hidden></div></section><main><div class="time" role="timer" aria-label="Elapsed time"><span class="current-task" id="current-task" aria-hidden="true" hidden></span><span id="hours" hidden></span><span id="hours-separator" class="sep" hidden>:</span><span id="minutes"></span><span class="sep">:</span><span id="seconds"></span></div><div class="interface"><div class="timer-adjust" id="timer-adjust" hidden><div class="adjust-rail left" role="group" aria-label="Adjust by 5 minutes"><button data-adjust="-5" aria-label="Subtract 5 minutes" title="Subtract 5 minutes"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 12h12"/></svg></button><span>5 min</span><button data-adjust="5" aria-label="Add 5 minutes" title="Add 5 minutes"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 12h12M12 6v12"/></svg></button></div><div class="adjust-rail right" role="group" aria-label="Adjust by 10 minutes"><button data-adjust="-10" aria-label="Subtract 10 minutes" title="Subtract 10 minutes"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 12h12"/></svg></button><span>10 min</span><button data-adjust="10" aria-label="Add 10 minutes" title="Add 10 minutes"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 12h12M12 6v12"/></svg></button></div></div><div class="controls"><button id="toggle" class="primary" aria-label="Start" title="Start" data-icon="play"><svg class="play-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5 18 12 8 18.5Z"/></svg><svg class="pause-icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="6.5" y="5" width="4" height="14" rx="1"/><rect x="13.5" y="5" width="4" height="14" rx="1"/></svg></button><button id="reset" aria-label="Reset" title="Reset" disabled><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 10a8 8 0 1 1 1.5 7M4 4v6h6"/></svg></button><button id="background-next" aria-label="Next background" title="Next background"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="3"/><circle cx="8" cy="9" r="1.5"/><path d="m4 17 5-5 4 4 3-3 5 5"/></svg></button><button id="settings-cog" aria-label="Pomodoro settings" title="Pomodoro settings" aria-haspopup="dialog" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 3-.6 2.2-1.6.9-2.2-.6-3 5.2 1.6 1.6v1.8l-1.6 1.6 3 5.2 2.2-.6 1.6.9L9 23h6l.6-2.2 1.6-.9 2.2.6 3-5.2-1.6-1.6v-1.8l1.6-1.6-3-5.2-2.2.6-1.6-.9L15 3Z" transform="translate(1.2 -1.2) scale(.9)"/><circle cx="12" cy="10.5" r="3"/></svg></button></div><div class="hint">Space to start / pause · R to reset</div></div></main><dialog class="settings-pane" id="pomodoro-settings" aria-labelledby="settings-title" aria-describedby="settings-note">
 <form id="settings-form">
 <header><h2 id="settings-title">Pomodoro</h2><button type="button" id="settings-close" aria-label="Close settings" title="Close settings"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"/></svg></button></header>
 <div class="settings-presets" role="group" aria-label="Timing preset"><button type="button" data-preset="25,5,15" aria-pressed="true">25 / 5</button><button type="button" data-preset="50,10,30" aria-pressed="false">50 / 10</button><button type="button" data-preset="custom" aria-pressed="false">Custom</button></div>
@@ -209,10 +244,10 @@ document.querySelector('#settings-form').onsubmit=event=>{
 };
 const modeArea=document.querySelector('.mode-area');
 const timerAdjust=document.querySelector('#timer-adjust');
-const tasksBox=document.querySelector('#tasks'),tasksPill=document.querySelector('#tasks-pill'),historyPane=document.querySelector('#history');
+const musicBox=document.querySelector('#music'),tasksBox=document.querySelector('#tasks'),tasksPill=document.querySelector('#tasks-pill'),historyPane=document.querySelector('#history');
 let taskDrag=null;
 // Typing or dragging a task keeps the list awake even when the mouse is still.
-const tasksBusy=()=>Boolean(taskDrag||document.activeElement?.closest('.tasks input'));
+const tasksBusy=()=>Boolean(taskDrag||document.activeElement?.closest('.tasks input,.music input'));
 function setTasksOpen(open){tasksBox.classList.toggle('open',open);tasksPill.setAttribute('aria-expanded',String(open))}
 let replayClick=null;
 function wake(event){
@@ -221,13 +256,13 @@ function wake(event){
      document.body.dataset.timerRunning==='true'&&!settingsPane.open&&!historyPane.open&&!document.hidden){
     window.dispatchEvent(new Event('cat:focus-nudge'));
   }
-  document.body.classList.remove('idle');surface.inert=false;modeArea.inert=false;timerAdjust.inert=false;tasksBox.inert=false;clearTimeout(idleTimer);
+  document.body.classList.remove('idle');surface.inert=false;modeArea.inert=false;timerAdjust.inert=false;tasksBox.inert=false;musicBox.inert=false;clearTimeout(idleTimer);
   if(event?.type==='pointerdown'){
     // Faded controls were not hit-testable when this press began, so find the button or task field now they are back.
-    const button=returning&&event.button===0?document.elementFromPoint(event.clientX,event.clientY)?.closest('button,.tasks input'):null;
+    const button=returning&&event.button===0?document.elementFromPoint(event.clientX,event.clientY)?.closest('button,.tasks input,.music input'):null;
     replayClick=button&&!button.disabled&&button!==event.target.closest('button')?button:null;
   }
-  if(event?.type==='click'&&replayClick){const button=replayClick;replayClick=null;if(!event.target.closest('button')){if(button.matches('input'))button.focus();else button.click()}}idleTimer=setTimeout(()=>{if(sessionComplete||settingsPane.open||historyPane.open||tasksBusy()||document.querySelector('.pixel-cat')?.dataset.dragging==='true')return;document.body.classList.add('idle');surface.inert=true;modeArea.inert=true;timerAdjust.inert=true;tasksBox.inert=true;setTasksOpen(false)},3500)}
+  if(event?.type==='click'&&replayClick){const button=replayClick;replayClick=null;if(!event.target.closest('button')){if(button.matches('input'))button.focus();else button.click()}}idleTimer=setTimeout(()=>{if(sessionComplete||settingsPane.open||historyPane.open||tasksBusy()||document.querySelector('.pixel-cat')?.dataset.dragging==='true')return;document.body.classList.add('idle');surface.inert=true;modeArea.inert=true;timerAdjust.inert=true;tasksBox.inert=true;musicBox.inert=true;setTasksOpen(false);setTracksOpen(false)},3500)}
 for(const event of ['pointermove','pointerdown','click','keydown'])document.addEventListener(event,wake,{capture:true,passive:true});
 wake();
 const background=document.querySelector('.background');
@@ -512,6 +547,61 @@ window.renderHistory=days=>{
   }));
   historyPane.scrollTop=scroll;
 };
+const musicInput=document.querySelector('#music-input'),musicNow=document.querySelector('#music-now'),musicTracks=document.querySelector('#music-tracks'),musicToggle=document.querySelector('#music-toggle'),musicNote=document.querySelector('#music-note');
+const youTubeLink=/^\s*(https?:\/\/)?([\w-]+\.)?(youtube\.com|youtu\.be|youtube-nocookie\.com)\/\S+\s*$/i;
+let musicState={},musicSignature='',musicNoteTimer=0;
+function setTracksOpen(open){musicTracks.hidden=!open||!musicTracks.children.length;musicToggle.setAttribute('aria-expanded',String(!musicTracks.hidden))}
+function formatStamp(seconds){
+  const hours=Math.floor(seconds/3600),minutes=Math.floor(seconds/60)%60,rest=String(seconds%60).padStart(2,'0');
+  return hours?`${hours}:${String(minutes).padStart(2,'0')}:${rest}`:`${minutes}:${rest}`;
+}
+function loadMusic(link){link=link.trim();if(!link)return;musicInput.value=link;send('music:'+link)}
+function showMusicNote(text){clearTimeout(musicNoteTimer);musicNote.textContent=text;musicNote.hidden=false;musicNoteTimer=setTimeout(()=>{musicNote.hidden=true;musicBox.classList.remove('error')},3000)}
+window.renderMusic=state=>{
+  const {status}=state,loaded=Boolean(state.id);
+  if(loaded||!status){musicState={...state};delete musicState.status}
+  musicBox.classList.toggle('loading',status==='loading');
+  musicBox.classList.toggle('error',status==='invalid'||status==='failed');
+  if(status==='invalid')showMusicNote('That isn’t a YouTube link');
+  if(status==='failed')showMusicNote('Couldn’t load that video');
+  if(status==='loading'){musicNote.hidden=true;musicInput.value='';musicInput.placeholder='Finding the video…'}else musicInput.placeholder='Paste a YouTube link';
+  const editing=status==='loading'||status==='invalid'||status==='failed';
+  // A failed paste falls back to whatever was already playing.
+  const shown=editing&&status!=='loading'?musicState:state;
+  musicNow.hidden=editing||!shown.id;
+  document.querySelector('#music-add').hidden=!editing&&Boolean(shown.id);
+  if(editing)setTracksOpen(false);
+  if(!editing){musicInput.value='';musicBox.classList.remove('adding');if(document.activeElement===musicInput)musicInput.blur()}
+  else{musicBox.classList.add('adding');if(status!=='loading'){musicInput.focus();musicInput.select()}}
+  if(!shown.id){musicSignature='';musicTracks.replaceChildren();setTracksOpen(false);return}
+  const signature=JSON.stringify([shown.id,shown.title,shown.tracks]);
+  if(signature===musicSignature)return;
+  musicSignature=signature;
+  document.querySelector('#music-thumb').src=shown.thumbnail||'';
+  setText('#music-title',shown.title);
+  document.querySelector('#music-video').title=`${shown.title}${shown.author?` · ${shown.author}`:''}\nOpen in YouTube`;
+  musicTracks.replaceChildren(...(shown.tracks||[]).map(track=>{
+    const item=document.createElement('li'),button=document.createElement('button'),time=document.createElement('span'),name=document.createElement('span');
+    button.type='button';button.title=`${track.title}\nPlay from ${formatStamp(track.seconds)} on YouTube`;
+    time.className='music-time';time.textContent=formatStamp(track.seconds);
+    name.className='music-track-name';name.textContent=track.title;
+    button.append(time,name);button.onclick=()=>send('music-open:'+track.seconds);
+    item.append(button);return item;
+  }));
+  musicToggle.hidden=!musicTracks.children.length;
+  musicToggle.title=`Tracklist · ${musicTracks.children.length} tracks`;
+  setTracksOpen(false);
+};
+document.querySelector('#music-start').onclick=()=>{musicBox.classList.add('adding');musicInput.focus()};
+document.querySelector('#music-add').onsubmit=event=>{event.preventDefault();loadMusic(musicInput.value)};
+musicInput.addEventListener('paste',()=>setTimeout(()=>{if(youTubeLink.test(musicInput.value))loadMusic(musicInput.value)}));
+musicInput.addEventListener('keydown',event=>{if(event.key==='Escape'){event.stopPropagation();musicInput.value='';musicInput.blur()}});
+musicInput.addEventListener('blur',()=>{if(!musicBox.classList.contains('loading')&&!musicInput.value.trim())window.renderMusic(musicState)});
+document.querySelector('#music-video').onclick=()=>send('music-open:0');
+document.querySelector('#music-clear').onclick=()=>send('music-clear');
+musicToggle.onclick=()=>setTracksOpen(musicTracks.hidden);
+document.addEventListener('pointerdown',event=>{if(!musicTracks.hidden&&!musicBox.contains(event.target))setTracksOpen(false)});
+musicBox.addEventListener('keydown',event=>{if(event.key==='Escape'&&!musicTracks.hidden){setTracksOpen(false);musicToggle.focus()}});
 document.querySelector('#toggle').onclick=()=>send('toggle');document.querySelector('#reset').onclick=()=>send('reset');document.addEventListener('keydown',e=>{
   if(settingsPane.open||historyPane.open)return;
   if(e.repeat||e.metaKey||e.ctrlKey||e.altKey||e.target.closest('input,textarea,select,[contenteditable=true]'))return;
