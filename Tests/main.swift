@@ -222,3 +222,69 @@ let taskDecoder = JSONDecoder(); taskDecoder.dateDecodingStrategy = .iso8601
 let reloaded = try! taskDecoder.decode(TaskLog.self, from: taskEncoder.encode(work))
 check(reloaded.tasks == work.tasks && reloaded.archive == work.archive && reloaded.sessions == work.sessions && !reloaded.isTracking, "Tasks and history persist; the open clock does not")
 print("Passed: task time tracking across modes, Pomodoro breaks, reordering, finishing, midnight, history and persistence.")
+check(Tracklist.videoID(from: "https://www.youtube.com/watch?v=i43tkaTXtwI&t=30s") == "i43tkaTXtwI", "Watch link")
+check(Tracklist.videoID(from: " youtu.be/TbAjL4qgzC0?si=abc ") == "TbAjL4qgzC0", "Short link without a scheme")
+check(Tracklist.videoID(from: "https://music.youtube.com/watch?v=pHrGDXEBPGs&list=RD") == "pHrGDXEBPGs", "YouTube Music link")
+check(Tracklist.videoID(from: "https://m.youtube.com/live/pHrGDXEBPGs") == "pHrGDXEBPGs" && Tracklist.videoID(from: "https://www.youtube.com/shorts/pHrGDXEBPGs") == "pHrGDXEBPGs", "Live and Shorts links")
+check(Tracklist.videoID(from: "https://example.com/watch?v=pHrGDXEBPGs") == nil && Tracklist.videoID(from: "https://www.youtube.com/watch?v=short") == nil && Tracklist.videoID(from: "hello") == nil, "Other links are refused")
+let mix = """
+🎶 | Tracklist
+[00:00] Tonion x xander. - Snow In April
+[03:46] Purrple Cat - Dissipate
+05:52 – Amess - Flying Colours (Remix)
+1. 8:34 Yasumu - Forest Waltz [Chillhop]
+11:16 - 12:30 twoscents - Rainy Days
+\u{200B}13:30\u{200B} -  • Kanisan - Dahlia...
+16:42 duplicate time should not replace the first
+16:42 also at 16:42
+Loved the drop at 5:00 💜
+Hoogway - Found You 1:02:29
+2:00:00 past the end
+"""
+let parsed = Tracklist.parse(mix, duration: 7200)
+check(parsed.map(\.seconds) == [0, 226, 352, 514, 676, 810, 1002, 3749], "Rising timestamps survive; strays, repeats and times past the end drop out")
+check(parsed.map(\.title) == ["Tonion x xander. - Snow In April", "Purrple Cat - Dissipate", "Amess - Flying Colours (Remix)", "Yasumu - Forest Waltz [Chillhop]",
+                              "twoscents - Rainy Days", "Kanisan - Dahlia...", "duplicate time should not replace the first", "Hoogway - Found You"], "Titles are cleaned")
+check(Tracklist.parse("00:00 A 03:20 B 07:10 C", duration: nil).map(\.title) == ["A", "B", "C"], "Several tracks on one line")
+check(Tracklist.parse("0:00 One\n4:75 Bad\n1:61:00 Bad\n9:00 Two\n12:00 🎵\n15:00 Three", duration: 600).map(\.title) == ["One", "Two"], "Invalid times, empty titles and times past the end are skipped")
+let picked = Tracklist.best(comments: ["the piano at 32:00 is deadly", "0:00 A\n3:00 B", "0:00 First\n2:00 Second\n4:00 Third", "0:00 Other\n2:00 Other two\n4:00 Other three"], description: "0:00 x\n1:00 y\n2:00 z\n3:00 w", duration: nil)
+check(picked.map(\.title) == ["First", "Second", "Third"], "The fullest comment wins, earlier comments win ties, and the description is only a fallback")
+check(Tracklist.best(comments: ["0:00 A\n3:00 B"], description: "0:00 x\n1:00 y\n2:00 z", duration: nil).map(\.title) == ["x", "y", "z"], "The description is used when no comment has a tracklist")
+check(Tracklist.best(comments: ["great mix 10:00"], description: nil, duration: nil).isEmpty, "A single song has no tracklist")
+// Lines from the tracklist comment on Virtual Riot's Lost Lands 2026 set (Ps1WZRwBS3A), with its legend.
+let riot = """
+Tracklist:
+0:00 Set intro - Virtual Riot
+6:43 Lost It - VIP (VIP) - Virtual Riot ** (alt, "lost it (vip show edit)")
+8:45 This Could Be Us VIP - Virtual Riot x Modestep x FRANK ZUMMO *
+25:46 ID - ID * (potentially Anybody (Virtual Riot Remix) - Skrillex x ISOxo)
+26:37 Sh*t's On F*re - Virtual Riot
+
+* = unreleased
+** = released on SoundCloud under his main or alt "RiotVirtual". Formatted as (account, "name of song").
+"""
+let riotTracks = Tracklist.parse(riot, duration: nil)
+check(riotTracks.map(\.title) == ["Set intro - Virtual Riot", "Lost It - VIP (VIP) - Virtual Riot", "This Could Be Us VIP - Virtual Riot x Modestep x FRANK ZUMMO", "ID - ID", "Sh*t's On F*re - Virtual Riot"], "Footnote markers come off the song names")
+check(riotTracks.map(\.note) == [nil, "Released on SoundCloud under his main or alt \"RiotVirtual\" · alt, \"lost it (vip show edit)\"", "Unreleased", "Unreleased · potentially Anybody (Virtual Riot Remix) - Skrillex x ISOxo", nil], "Markers become notes using the comment's own legend")
+let otherLegend = Tracklist.parse("0:00 Intro †\n3:00 (U) Second Song\n6:00 Third Song *\n† - edit\n(U): unreleased", duration: nil)
+check(otherLegend.map(\.title) == ["Intro", "Second Song", "Third Song *"] && otherLegend.map(\.note) == ["Edit", "Unreleased", nil], "Other legend styles work, and markers the comment never explains stay as written")
+// From the tracklist comment on Overmono's Boiler Room Manchester set (xgJBhezlMoE).
+check(Tracklist.parse("2:41 - gunk\n12:00 - freedom 2\n16:05 - 🚀\n26:00 - turn the page\n1:06:43 - good lies\n1:07:24 (lewis on shoulders maybe)", duration: nil).map(\.title) == ["gunk", "freedom 2", "turn the page", "good lies"], "Emoji-only and bracketed remarks are not songs")
+// From the tracklist comment on the Overmono, Fred again.. & Lil Yachty Lot Radio set (9Stt4wq3KCE).
+let lot = Tracklist.parse("Tracklist:\n(19:30) ID – ID\n(22:30) Joy Orbison – Flight Fm (XL)\nw/ Lil Yachty & Future & Playboi Carti – Flex Up (QUALITY CONTROL)\n(26:30) ID – ID\nLet me know if I missed anything", duration: nil)
+check(lot.map(\.title) == ["ID – ID", "Joy Orbison – Flight Fm (XL)", "ID – ID"] && lot.map(\.note) == [nil, "w/ Lil Yachty & Future & Playboi Carti – Flex Up (QUALITY CONTROL)", nil], "A \"w/\" line under a track becomes its note; other loose lines are ignored")
+// Comments from Overmono's Lost Village 2026 set (bVwguT23r0k): track-ID questions, not a tracklist.
+let overmono = ["Need that unreleased \"Ray Tune\" from Joy Orbison ASAP 36:10", "22:40 TF IS THIS?!?!?!??!?!?!?", "also 23:00 track ID plz",
+                "what is the marianne remix ID at 19:50??", "19:06 song ID?", "I NEED to know what ID is 19:00 😮", "18:58 track ID?", "23:00 what is this wow"]
+check(Tracklist.best(comments: overmono, description: "Live from The Outpost with Defender at Lost Village 2026... 🌲", duration: nil).isEmpty, "Scattered track-ID questions are not stitched into a tracklist")
+let response: [String: Any] = ["onResponseReceivedEndpoints": [["reloadContinuationItemsCommand": ["continuationItems": [
+    ["commentThreadRenderer": ["replies": ["commentRepliesRenderer": ["contents": [["continuationItemRenderer": ["continuationEndpoint": ["continuationCommand": ["token": "replies"]]]]]]]]],
+    ["continuationItemRenderer": ["continuationEndpoint": ["continuationCommand": ["token": "page2"]]]]]]]],
+    "frameworkUpdates": ["entityBatchUpdate": ["mutations": [["payload": ["commentEntityPayload": ["properties": ["content": ["content": "0:00 A"]]]]], ["payload": ["commentEntityPayload": ["properties": ["content": ["content": "nice"]]]]]]]]]
+check(Tracklist.comments(in: response) == ["0:00 A", "nice"] && Tracklist.nextPageToken(in: response) == "page2", "Comments and the next page are read from a YouTube response")
+let watchPage: [String: Any] = ["contents": [["itemSectionRenderer": ["sectionIdentifier": "comment-item-section", "contents": [["continuationItemRenderer": ["continuationEndpoint": ["continuationCommand": ["token": "first"]]]]]]]],
+                            "description": ["attributedDescription": ["content": "About this mix"]]]
+check(Tracklist.commentsToken(in: watchPage) == "first" && Tracklist.description(in: watchPage) == "About this mix", "The comments token and description are read from the watch response")
+let link = MusicLink(id: "i43tkaTXtwI", title: "Mix", author: "Lofi Girl", thumbnail: "", tracks: parsed)
+check(try! JSONDecoder().decode(MusicLink.self, from: JSONEncoder().encode(link)) == link, "The pasted link persists")
+print("Passed: YouTube links, tracklist parsing and cleaning, picking the best comment, and reading YouTube responses.")

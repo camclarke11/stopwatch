@@ -1,6 +1,7 @@
 import Cocoa
 import WebKit
 import CoreText
+import MediaPlayer
 
 final class App: NSObject, NSApplicationDelegate, WKScriptMessageHandler, WKNavigationDelegate {
     var window: NSWindow!
@@ -16,6 +17,12 @@ final class App: NSObject, NSApplicationDelegate, WKScriptMessageHandler, WKNavi
     var backgroundIndex = 0
     var log = TaskLog()
     var logSavedAt = 0.0
+    var music: MusicLink?
+    var musicRequest = 0
+    let player = Player()
+    var musicPlaying = false
+    var musicSeconds = 0.0
+    var musicVolume = UserDefaults.standard.object(forKey: "musicVolume") as? Int ?? 80
     let logURL = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
         .appendingPathComponent("Stewie", isDirectory: true).appendingPathComponent("tasks.json")
     func loadLog() {
@@ -41,6 +48,109 @@ final class App: NSObject, NSApplicationDelegate, WKScriptMessageHandler, WKNavi
         guard let data = try? JSONSerialization.data(withJSONObject: log.history()),
               let json = String(data: data, encoding: .utf8) else { return }
         web.evaluateJavaScript("window.renderHistory(\(json));", completionHandler: nil)
+    }
+    func handleMusic(_ action: String) {
+        if action == "music-clear" {
+            musicRequest += 1; music = nil; player.stop()
+            UserDefaults.standard.removeObject(forKey: "music")
+            sendMusic(); return
+        }
+        if action == "music-play", let music { player.play(music.id); return }
+        if action == "music-pause" { player.pause(); return }
+        if action == "music-toggle" { toggleMusic(); return }
+        if action == "music-next" { skipTrack(1); return }
+        if action == "music-previous" { skipTrack(-1); return }
+        if action.hasPrefix("music-volume:"), let level = Int(action.dropFirst("music-volume:".count)) {
+            musicVolume = min(100, max(0, level))
+            UserDefaults.standard.set(musicVolume, forKey: "musicVolume")
+            player.volume = musicVolume; return
+        }
+        if action.hasPrefix("music-seek:"), let music, let seconds = Int(action.dropFirst("music-seek:".count)) { player.play(music.id, from: seconds); return }
+        guard action.hasPrefix("music:") else { return }
+        guard let id = Tracklist.videoID(from: String(action.dropFirst("music:".count))) else { sendMusic(status: "invalid"); return }
+        musicRequest += 1
+        let request = musicRequest
+        player.stop()
+        sendMusic(status: "loading")
+        Task { @MainActor [weak self] in
+            let link = try? await YouTube.load(id: id)
+            // A newer paste or a removal replaces this one.
+            guard let self, request == self.musicRequest else { return }
+            guard let link else { self.sendMusic(status: "failed"); return }
+            self.music = link
+            if let data = try? JSONEncoder().encode(link) { UserDefaults.standard.set(data, forKey: "music") }
+            self.sendMusic()
+        }
+    }
+    // Opens behind Stewie, so the browser doesn't take over the screen.
+    func openOnYouTube(_ id: String, from seconds: Int) {
+        var components = URLComponents(string: "https://www.youtube.com/watch")!
+        components.queryItems = [URLQueryItem(name: "v", value: id)]
+        if seconds > 0 { components.queryItems?.append(URLQueryItem(name: "t", value: "\(seconds)s")) }
+        let configuration = NSWorkspace.OpenConfiguration()
+        configuration.activates = false
+        NSWorkspace.shared.open(components.url!, configuration: configuration, completionHandler: nil)
+    }
+    @discardableResult func toggleMusic() -> Bool {
+        guard let music else { return false }
+        if musicPlaying { player.pause() } else { player.play(music.id) }
+        return true
+    }
+    // Jumps to the next track, or back to the start of this one (or the one before, near its start).
+    @discardableResult func skipTrack(_ direction: Int) -> Bool {
+        guard let music, !music.tracks.isEmpty else { return false }
+        let now = Int(musicSeconds)
+        let current = music.tracks.lastIndex { $0.seconds <= now } ?? -1
+        let target: Int
+        if direction > 0 {
+            guard current + 1 < music.tracks.count else { return false }
+            target = music.tracks[current + 1].seconds
+        } else if current >= 0, now - music.tracks[current].seconds > 3 || current == 0 {
+            target = music.tracks[current].seconds
+        } else {
+            target = music.tracks[max(0, current - 1)].seconds
+        }
+        // Repeated presses step on from here, before the player reports back.
+        musicSeconds = Double(target)
+        player.play(music.id, from: target)
+        return true
+    }
+    func setUpMediaKeys() {
+        let commands = MPRemoteCommandCenter.shared()
+        commands.togglePlayPauseCommand.addTarget { [weak self] _ in self?.toggleMusic() == true ? .success : .noActionableNowPlayingItem }
+        commands.playCommand.addTarget { [weak self] _ in
+            guard let self, let music = self.music else { return .noActionableNowPlayingItem }
+            self.player.play(music.id); return .success
+        }
+        commands.pauseCommand.addTarget { [weak self] _ in self?.player.pause(); return .success }
+        commands.nextTrackCommand.addTarget { [weak self] _ in self?.skipTrack(1) == true ? .success : .commandFailed }
+        commands.previousTrackCommand.addTarget { [weak self] _ in self?.skipTrack(-1) == true ? .success : .commandFailed }
+    }
+    // Lets the keyboard's media keys and Control Centre find the music.
+    func updateNowPlaying() {
+        let center = MPNowPlayingInfoCenter.default()
+        guard let music, musicPlaying || musicSeconds > 0 else { center.nowPlayingInfo = nil; center.playbackState = .stopped; return }
+        let track = music.tracks.last { $0.seconds <= Int(musicSeconds) }
+        center.nowPlayingInfo = [MPMediaItemPropertyTitle: track?.title ?? music.title, MPMediaItemPropertyArtist: track == nil ? music.author : music.title,
+                                 MPNowPlayingInfoPropertyElapsedPlaybackTime: musicSeconds, MPNowPlayingInfoPropertyPlaybackRate: musicPlaying ? 1.0 : 0.0]
+        center.playbackState = musicPlaying ? .playing : .paused
+    }
+    func sendPlayback(_ state: [String: Any]) {
+        musicPlaying = state["playing"] as? Bool ?? false
+        if let seconds = state["seconds"] as? Double { musicSeconds = seconds }
+        updateNowPlaying()
+        guard ready, let data = try? JSONSerialization.data(withJSONObject: state), let json = String(data: data, encoding: .utf8) else { return }
+        web.evaluateJavaScript("window.renderPlayback(\(json));", completionHandler: nil)
+    }
+    func sendMusic(status: String? = nil) {
+        var payload: [String: Any] = [:]
+        if let music {
+            payload = ["id": music.id, "title": music.title, "author": music.author, "thumbnail": music.thumbnail, "volume": musicVolume,
+                       "tracks": music.tracks.map { ["seconds": $0.seconds, "title": $0.title, "note": $0.note ?? ""] as [String: Any] }]
+        }
+        if let status { payload["status"] = status }
+        guard let data = try? JSONSerialization.data(withJSONObject: payload), let json = String(data: data, encoding: .utf8) else { return }
+        web.evaluateJavaScript("window.renderMusic(\(json));", completionHandler: nil)
     }
     func migrateLegacyAppIfNeeded() -> Bool {
         let source = Bundle.main.bundleURL.standardizedFileURL
@@ -117,6 +227,17 @@ final class App: NSObject, NSApplicationDelegate, WKScriptMessageHandler, WKNavi
                 UserDefaults.standard.synchronize()
             }
         }
+        // Without an Edit menu, ⌘V and the other text shortcuts do nothing in the web view.
+        let editItem = NSMenuItem(); menu.addItem(editItem)
+        let editMenu = NSMenu(title: "Edit")
+        editMenu.addItem(withTitle: "Undo", action: Selector(("undo:")), keyEquivalent: "z")
+        editMenu.addItem(withTitle: "Redo", action: Selector(("redo:")), keyEquivalent: "Z")
+        editMenu.addItem(NSMenuItem.separator())
+        editMenu.addItem(withTitle: "Cut", action: #selector(NSText.cut(_:)), keyEquivalent: "x")
+        editMenu.addItem(withTitle: "Copy", action: #selector(NSText.copy(_:)), keyEquivalent: "c")
+        editMenu.addItem(withTitle: "Paste", action: #selector(NSText.paste(_:)), keyEquivalent: "v")
+        editMenu.addItem(withTitle: "Select All", action: #selector(NSText.selectAll(_:)), keyEquivalent: "a")
+        editItem.submenu = editMenu
         let viewItem = NSMenuItem(); menu.addItem(viewItem)
         let viewMenu = NSMenu(title: "View")
         let fullScreenItem = NSMenuItem(title: "Toggle Full Screen", action: #selector(NSWindow.toggleFullScreen(_:)), keyEquivalent: "f")
@@ -134,6 +255,7 @@ final class App: NSObject, NSApplicationDelegate, WKScriptMessageHandler, WKNavi
         }
         UserDefaults.standard.removeObject(forKey: "updateCheckpoint")
         loadLog()
+        if let data = UserDefaults.standard.data(forKey: "music") { music = try? JSONDecoder().decode(MusicLink.self, from: data) }
         updater.start()
         let config = WKWebViewConfiguration()
         config.userContentController.add(self, name: "stopwatch")
@@ -147,7 +269,20 @@ final class App: NSObject, NSApplicationDelegate, WKScriptMessageHandler, WKNavi
         window.titlebarAppearsTransparent = true
         window.backgroundColor = NSColor(calibratedWhite: 0.08, alpha: 1)
         window.appearance = NSAppearance(named: .darkAqua)
-        window.contentView = web
+        // The music player lives, hidden, behind the main view.
+        let container = NSView()
+        window.contentView = container
+        web.frame = container.bounds
+        web.autoresizingMask = [.width, .height]
+        container.addSubview(web)
+        player.host = container
+        player.volume = musicVolume
+        setUpMediaKeys()
+        player.onChange = { [weak self] state in self?.sendPlayback(state) }
+        player.onFailure = { [weak self] id, seconds in
+            self?.openOnYouTube(id, from: seconds)
+            self?.sendMusic(status: "external")
+        }
         window.center()
         window.makeKeyAndOrderFront(nil)
         NSApp.activate(ignoringOtherApps: true)
@@ -172,6 +307,7 @@ final class App: NSObject, NSApplicationDelegate, WKScriptMessageHandler, WKNavi
         guard let action = message.body as? String else { return }
         if action == "background:next" { nextBackground(); return }
         if action == "history" { sendHistory(); return }
+        if action.hasPrefix("music") { handleMusic(action); return }
         let timestamp = now()
         if action.hasPrefix("task-") {
             // Credit the outgoing top task before the list changes.
@@ -179,7 +315,7 @@ final class App: NSObject, NSApplicationDelegate, WKScriptMessageHandler, WKNavi
             if log.handle(action) { render(); saveLog() }
             return
         }
-        if action == "ready" { ready = true }
+        if action == "ready" { ready = true; sendMusic() }
         else {
             log.record(state, at: timestamp)
             if state.handle(action, at: timestamp) { signalCompletion() }

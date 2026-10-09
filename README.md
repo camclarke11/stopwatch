@@ -7,10 +7,11 @@ A quiet macOS stopwatch, Pomodoro and countdown timer, with large DynaPuff numbe
 - Reset the four-focus Pomodoro cycle from Pomodoro settings at any time
 - A three-task list for the day in the top-left corner. Drag to reorder, click a task to rename it, and tick it off to sink it to the bottom. The top unfinished task collects time whenever any timer runs (Pomodoro breaks excluded), shows above the enlarged clock when the controls fade, and every session is kept in a day-by-day history (the clock icon in the list). Task data is stored in `~/Library/Application Support/Stewie/tasks.json`
 - A small wallpaper button beside Reset cycles through the backgrounds
+- Paste a YouTube song or mix into the top-right corner and play or pause it from its thumbnail, right inside Stewie. For mixes, a small toggle lists the tracks, pulled from the video’s comments; click one to jump to it
 - Playful cat reminders when mouse movement interrupts any running timer, with gentler lines during Pomodoro breaks
 - Full-screen layout and controls that fade when the mouse is idle
 - Space to start/pause, R to reset; + and − adjust countdowns by one minute
-- Local, offline timing; an internet connection is only needed for installation and updates
+- Local, offline timing; an internet connection is only needed for installation, updates and looking up YouTube links
 
 ## Install on your Mac
 
