@@ -23,7 +23,6 @@ final class App: NSObject, NSApplicationDelegate, WKScriptMessageHandler, WKNavi
     var musicPlaying = false
     var musicSeconds = 0.0
     var musicVolume = UserDefaults.standard.object(forKey: "musicVolume") as? Int ?? 80
-    var musicDuck = UserDefaults.standard.bool(forKey: "musicDuck")
     let logURL = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
         .appendingPathComponent("Stewie", isDirectory: true).appendingPathComponent("tasks.json")
     func loadLog() {
@@ -64,12 +63,7 @@ final class App: NSObject, NSApplicationDelegate, WKScriptMessageHandler, WKNavi
         if action.hasPrefix("music-volume:"), let level = Int(action.dropFirst("music-volume:".count)) {
             musicVolume = min(100, max(0, level))
             UserDefaults.standard.set(musicVolume, forKey: "musicVolume")
-            applyVolume(); return
-        }
-        if action.hasPrefix("music-duck:") {
-            musicDuck = action.hasSuffix(":1")
-            UserDefaults.standard.set(musicDuck, forKey: "musicDuck")
-            applyVolume(); sendMusic(); return
+            player.volume = musicVolume; return
         }
         if action.hasPrefix("music-seek:"), let music, let seconds = Int(action.dropFirst("music-seek:".count)) { player.play(music.id, from: seconds); return }
         guard action.hasPrefix("music:") else { return }
@@ -121,11 +115,6 @@ final class App: NSObject, NSApplicationDelegate, WKScriptMessageHandler, WKNavi
         player.play(music.id, from: target)
         return true
     }
-    // Quieter during Pomodoro breaks when asked.
-    func applyVolume() {
-        let ducked = musicDuck && state.mode == .pomodoro && state.phase != .focus
-        player.volume = ducked ? musicVolume * 3 / 10 : musicVolume
-    }
     func setUpMediaKeys() {
         let commands = MPRemoteCommandCenter.shared()
         commands.togglePlayPauseCommand.addTarget { [weak self] _ in self?.toggleMusic() == true ? .success : .noActionableNowPlayingItem }
@@ -156,7 +145,7 @@ final class App: NSObject, NSApplicationDelegate, WKScriptMessageHandler, WKNavi
     func sendMusic(status: String? = nil) {
         var payload: [String: Any] = [:]
         if let music {
-            payload = ["id": music.id, "title": music.title, "author": music.author, "thumbnail": music.thumbnail, "volume": musicVolume, "duck": musicDuck,
+            payload = ["id": music.id, "title": music.title, "author": music.author, "thumbnail": music.thumbnail, "volume": musicVolume,
                        "tracks": music.tracks.map { ["seconds": $0.seconds, "title": $0.title, "note": $0.note ?? ""] as [String: Any] }]
         }
         if let status { payload["status"] = status }
@@ -287,7 +276,7 @@ final class App: NSObject, NSApplicationDelegate, WKScriptMessageHandler, WKNavi
         web.autoresizingMask = [.width, .height]
         container.addSubview(web)
         player.host = container
-        applyVolume()
+        player.volume = musicVolume
         setUpMediaKeys()
         player.onChange = { [weak self] state in self?.sendPlayback(state) }
         player.onFailure = { [weak self] id, seconds in
@@ -345,7 +334,6 @@ final class App: NSObject, NSApplicationDelegate, WKScriptMessageHandler, WKNavi
         log.record(state, at: timestamp)
         if state.tick(at: timestamp) { signalCompletion() }
         log.record(state, at: timestamp)
-        applyVolume()
         if log.isTracking != wasTracking || (log.isTracking && timestamp - logSavedAt >= 30) { saveLog() }
         synchronizeTicker()
         var snapshot = state.snapshot(at: timestamp)
