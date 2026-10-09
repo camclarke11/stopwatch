@@ -18,6 +18,7 @@ final class App: NSObject, NSApplicationDelegate, WKScriptMessageHandler, WKNavi
     var logSavedAt = 0.0
     var music: MusicLink?
     var musicRequest = 0
+    let player = Player()
     let logURL = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
         .appendingPathComponent("Stewie", isDirectory: true).appendingPathComponent("tasks.json")
     func loadLog() {
@@ -46,21 +47,23 @@ final class App: NSObject, NSApplicationDelegate, WKScriptMessageHandler, WKNavi
     }
     func handleMusic(_ action: String) {
         if action == "music-clear" {
-            musicRequest += 1; music = nil
+            musicRequest += 1; music = nil; player.stop()
             UserDefaults.standard.removeObject(forKey: "music")
             sendMusic(); return
         }
+        if action == "music-play", let music { player.play(music.id); return }
+        if action == "music-pause" { player.pause(); return }
+        if action.hasPrefix("music-seek:"), let music, let seconds = Int(action.dropFirst("music-seek:".count)) { player.play(music.id, from: seconds); return }
         if action.hasPrefix("music-open:") {
             guard let music else { return }
-            var components = URLComponents(string: "https://www.youtube.com/watch")!
-            components.queryItems = [URLQueryItem(name: "v", value: music.id)]
-            if let seconds = Int(action.dropFirst("music-open:".count)), seconds > 0 { components.queryItems?.append(URLQueryItem(name: "t", value: "\(seconds)s")) }
-            NSWorkspace.shared.open(components.url!); return
+            player.pause()
+            openOnYouTube(music.id, from: Int(action.dropFirst("music-open:".count)) ?? 0); return
         }
         guard action.hasPrefix("music:") else { return }
         guard let id = Tracklist.videoID(from: String(action.dropFirst("music:".count))) else { sendMusic(status: "invalid"); return }
         musicRequest += 1
         let request = musicRequest
+        player.stop()
         sendMusic(status: "loading")
         Task { @MainActor [weak self] in
             let link = try? await YouTube.load(id: id)
@@ -71,6 +74,19 @@ final class App: NSObject, NSApplicationDelegate, WKScriptMessageHandler, WKNavi
             if let data = try? JSONEncoder().encode(link) { UserDefaults.standard.set(data, forKey: "music") }
             self.sendMusic()
         }
+    }
+    // Opens behind Stewie, so the browser doesn't take over the screen.
+    func openOnYouTube(_ id: String, from seconds: Int) {
+        var components = URLComponents(string: "https://www.youtube.com/watch")!
+        components.queryItems = [URLQueryItem(name: "v", value: id)]
+        if seconds > 0 { components.queryItems?.append(URLQueryItem(name: "t", value: "\(seconds)s")) }
+        let configuration = NSWorkspace.OpenConfiguration()
+        configuration.activates = false
+        NSWorkspace.shared.open(components.url!, configuration: configuration, completionHandler: nil)
+    }
+    func sendPlayback(_ state: [String: Any]) {
+        guard ready, let data = try? JSONSerialization.data(withJSONObject: state), let json = String(data: data, encoding: .utf8) else { return }
+        web.evaluateJavaScript("window.renderPlayback(\(json));", completionHandler: nil)
     }
     func sendMusic(status: String? = nil) {
         var payload: [String: Any] = [:]
@@ -199,7 +215,18 @@ final class App: NSObject, NSApplicationDelegate, WKScriptMessageHandler, WKNavi
         window.titlebarAppearsTransparent = true
         window.backgroundColor = NSColor(calibratedWhite: 0.08, alpha: 1)
         window.appearance = NSAppearance(named: .darkAqua)
-        window.contentView = web
+        // The music player lives, hidden, behind the main view.
+        let container = NSView()
+        window.contentView = container
+        web.frame = container.bounds
+        web.autoresizingMask = [.width, .height]
+        container.addSubview(web)
+        player.host = container
+        player.onChange = { [weak self] state in self?.sendPlayback(state) }
+        player.onFailure = { [weak self] id, seconds in
+            self?.openOnYouTube(id, from: seconds)
+            self?.sendMusic(status: "external")
+        }
         window.center()
         window.makeKeyAndOrderFront(nil)
         NSApp.activate(ignoringOtherApps: true)
