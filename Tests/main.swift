@@ -251,6 +251,9 @@ let picked = Tracklist.best(comments: ["the piano at 32:00 is deadly", "0:00 A\n
 check(picked.map(\.title) == ["First", "Second", "Third"], "The fullest comment wins, earlier comments win ties, and the description is only a fallback")
 check(Tracklist.best(comments: ["0:00 A\n3:00 B"], description: "0:00 x\n1:00 y\n2:00 z", duration: nil).map(\.title) == ["x", "y", "z"], "The description is used when no comment has a tracklist")
 check(Tracklist.best(comments: ["great mix 10:00"], description: nil, duration: nil).isEmpty, "A single song has no tracklist")
+// Lines from the tracklist comment on Virtual Riot's Lost Lands 2026 set (Ps1WZRwBS3A), with footnote markers.
+let riot = "Tracklist:\n0:00 Set intro - Virtual Riot\n6:43 Lost It - VIP (VIP) - Virtual Riot ** (alt, \"lost it (vip show edit)\")\n8:45 This Could Be Us VIP - Virtual Riot x Modestep x FRANK ZUMMO *\n26:37 Sh*t's On F*re - Virtual Riot\n\n* = unreleased"
+check(Tracklist.parse(riot, duration: nil).map(\.title) == ["Set intro - Virtual Riot", "Lost It - VIP (VIP) - Virtual Riot", "This Could Be Us VIP - Virtual Riot x Modestep x FRANK ZUMMO", "Sh*t's On F*re - Virtual Riot"], "Footnote markers and their notes are trimmed from titles")
 // Comments from Overmono's Lost Village 2026 set (bVwguT23r0k): track-ID questions, not a tracklist.
 let overmono = ["Need that unreleased \"Ray Tune\" from Joy Orbison ASAP 36:10", "22:40 TF IS THIS?!?!?!??!?!?!?", "also 23:00 track ID plz",
                 "what is the marianne remix ID at 19:50??", "19:06 song ID?", "I NEED to know what ID is 19:00 😮", "18:58 track ID?", "23:00 what is this wow"]

@@ -92,6 +92,8 @@ enum Tracklist {
     private static let numbering = try! NSRegularExpression(pattern: #"^(?:#?\d{1,3}[.)]|#\d{1,3})\s+"#)
     // Characters a comment lost in transit come through as runs of question marks.
     private static let unreadable = try! NSRegularExpression(pattern: #"\?{3,}$"#)
+    // Footnote markers like "Song - Artist ** (alt, ...)" start a note about the track, not its name.
+    private static let footnote = try! NSRegularExpression(pattern: #"\s\*+(?:\s.*)?$"#)
 
     private static func trim(_ text: String) -> String {
         var scalars = Substring(text).unicodeScalars
@@ -102,7 +104,7 @@ enum Tracklist {
 
     private static func clean(_ text: String) -> String {
         var title = trim(text)
-        for pattern in [numbering, unreadable] {
+        for pattern in [numbering, unreadable, footnote] {
             title = trim(pattern.stringByReplacingMatches(in: title, range: NSRange(location: 0, length: (title as NSString).length), withTemplate: ""))
         }
         title = title.split(whereSeparator: \.isWhitespace).joined(separator: " ")
