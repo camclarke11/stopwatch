@@ -3,7 +3,9 @@ const source=fs.readFileSync(require('path').join(__dirname,'../Source/pixel-cat
 async function simulate({width=1280,height=720,reduced=false}={}) {
   let now=0,serial=0,cat,bubble,running=true,mode='stopwatch',phase='focus',hidden=false,modal=false,randomIndex=0;
   const pending=new Map(),events={},observers=[];
-  const context2d={clearRect(){},save(){},restore(){},translate(){},scale(){},fillRect(){},measureText(glyph){return {actualBoundingBoxAscent:height*(glyph===':'?.22:.28)}}};
+  const context2d={clearRect(){},save(){},restore(){},translate(){},scale(){},fillRect(){},measureText(glyph){return {actualBoundingBoxAscent:height*(glyph===':'?.22:.28)}},fillText(){},
+    // A colon whose dots fill the top and bottom 38% of its height.
+    getImageData(x,y,w,h){const ascent=Math.ceil(height*.22),data=new Uint8ClampedArray(w*h*4);for(let row=0;row<h;row++){const from=ascent+1-row;if((from>0&&from<=ascent*.38)||(from>=ascent*.62&&from<=ascent))for(let col=0;col<w;col++)data[(row*w+col)*4+3]=255}return {data}}};
   const element=()=>({style:{setProperty(){}},classList:{toggle(){}},dataset:{},listeners:{},captured:null,setAttribute(name,value){this[name]=value},getContext:()=>context2d,
     addEventListener(name,fn){this.listeners[name]=fn},
     setPointerCapture(id){this.captured=id},hasPointerCapture(id){return this.captured===id},releasePointerCapture(){this.captured=null},
@@ -74,6 +76,12 @@ async function simulate({width=1280,height=720,reduced=false}={}) {
   advance(2000);landed=cat.getBoundingClientRect();
   assert(Math.abs(landed.left+landed.width/2-width*.5)<2,'Cat can land on colon center');
   assert(Math.abs(landed.top+landed.height*(26/28)-height*.43)<2,'Colon uses its own visible top, not digit height');
+  pointer('pointerdown',landed.left+landed.width/2,landed.top+landed.height/2);
+  pointer('pointermove',width*.5,height*.52);
+  pointer('pointerup',width*.5,height*.52);
+  advance(2000);landed=cat.getBoundingClientRect();
+  assert(Math.abs(landed.left+landed.width/2-width*.5)<2,'Cat can land between the colon dots');
+  assert(Math.abs(landed.top+landed.height*(26/28)-(height*.65-Math.ceil(height*.22)*.38))<3,'Cat rests on the colon\'s lower dot');
   pointer('pointerdown',landed.left+landed.width/2,landed.top+landed.height/2);
   pointer('pointermove',-200,height+500);advance(100);
   pointer('pointercancel',-200,height+500);advance(2000);

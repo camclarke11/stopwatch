@@ -243,13 +243,40 @@
       .filter(digit => digit.getBoundingClientRect().width > 0)
       .map(digit => {
         const rect = digit.getBoundingClientRect();
-        const glyph = digit.textContent === ':' ? ':' : '0';
-        const top = baselineY - measure.measureText(glyph).actualBoundingBoxAscent * zoom;
-        return { x:rect.left + rect.width / 2, width:rect.width, top };
+        if (digit.textContent !== ':') {
+          return { x:rect.left + rect.width / 2, width:rect.width, top:baselineY - measure.measureText('0').actualBoundingBoxAscent * zoom };
+        }
+        // A colon offers two perches: the top of its upper dot and the top of its lower one.
+        return { x:rect.left + rect.width / 2, width:rect.width, top:baselineY - measure.measureText(':').actualBoundingBoxAscent * zoom, lowTop:baselineY - lowerDot() * zoom };
       });
     geometry = { platforms };
     canvas.style.width = `${32 * scale}px`;
     canvas.style.height = `${28 * scale}px`;
+  }
+
+  // Height of the colon's lower dot above the baseline, found by drawing the glyph once per font.
+  let dotFont = '', dotHeight = 0;
+  function lowerDot() {
+    if (measure.font === dotFont) return dotHeight;
+    const metrics = measure.measureText(':');
+    const ascent = Math.ceil(metrics.actualBoundingBoxAscent), descent = Math.ceil(metrics.actualBoundingBoxDescent || 0);
+    const width = Math.ceil((metrics.actualBoundingBoxLeft || 0) + (metrics.actualBoundingBoxRight || metrics.width || 0)) + 2;
+    dotFont = measure.font; dotHeight = ascent * .4;
+    if (!ascent || !width) return dotHeight;
+    const sheet = document.createElement('canvas');
+    sheet.width = width; sheet.height = ascent + descent + 2;
+    const scratch = sheet.getContext('2d');
+    scratch.font = measure.font;
+    scratch.fillText(':', (metrics.actualBoundingBoxLeft || 0) + 1, ascent + 1);
+    const pixels = scratch.getImageData(0, 0, width, ascent + descent + 2).data;
+    const inked = row => { for (let x = 0; x < width; x++) if (pixels[(row * width + x) * 4 + 3] > 64) return true; return false; };
+    // Walk up from the bottom: the first clear row above some ink is the gap between the dots.
+    let seen = false;
+    for (let row = ascent + descent + 1; row >= 0; row--) {
+      if (inked(row)) seen = true;
+      else if (seen) { dotHeight = ascent - row; break; }
+    }
+    return dotHeight;
   }
 
   function point(at) {
@@ -262,7 +289,8 @@
     const position = clamp(at.u, 0, .999) * platforms.length;
     const digit = platforms[Math.floor(position)];
     const across = (position % 1 - .5) * digit.width * .4;
-    return { x:digit.x + across, y:Math.max(28 * scale + 8, digit.top + Math.abs(across) * .12) };
+    const top = at.low && digit.lowTop ? digit.lowTop : digit.top;
+    return { x:digit.x + across, y:Math.max(28 * scale + 8, top + Math.abs(across) * .12) };
   }
 
   function drawSprite(name, blink) {
@@ -309,10 +337,13 @@
       const digit = Math.min(count - 1, Math.floor(anchor.u * count));
       const direction = digit === 0 ? 1 : digit === count - 1 ? -1 : Math.random() < .5 ? -1 : 1;
       const nextDigit = Math.random() < .3 ? digit : digit + direction;
-      target = { surface:'clock', u:(clamp(nextDigit, 0, count - 1) + random(.3, .7)) / count };
+      const landing = clamp(nextDigit, 0, count - 1);
+      target = { surface:'clock', u:(landing + random(.3, .7)) / count };
+      // Sometimes tuck in on the colon's lower dot instead of perching on top.
+      if (geometry.platforms[landing]?.lowTop && Math.random() < .5) target.low = true;
     }
     const from = point(anchor), to = point(target);
-    const walk = anchor.surface === target.surface && Math.abs(from.x - to.x) < (geometry.platforms[0]?.width || 80) * .5;
+    const walk = anchor.surface === target.surface && Math.abs(from.x - to.x) < (geometry.platforms[0]?.width || 80) * .5 && Math.abs(from.y - to.y) < 8 * scale;
     facing = to.x >= from.x ? 1 : -1;
     const distance = Math.hypot(to.x - from.x, to.y - from.y);
     journey = { from:anchor, to:target, start:now, duration:walk ? clamp(distance / 20 * 1000, 1300, 2600) : clamp(distance / 220 * 1000, 950, 2500), walk };
@@ -388,11 +419,16 @@
     readGeometry();
     let target = { surface:'floor', u:clamp(released.x / innerWidth, 0, 1) };
     // Only catch a digit or colon if the cat is above it. Dropping below the clock falls to the floor.
+    // Between a colon's dots, the cat drops onto the lower one.
     geometry.platforms.some((digit, index) => {
       if (Math.abs(released.x - digit.x) > digit.width * .45) return false;
       const within = clamp((released.x - digit.x) / (digit.width * .4), -.49, .49) + .5;
       const candidate = { surface:'clock', u:(index + within) / geometry.platforms.length };
-      if (released.y > point(candidate).y + 6 * scale) return false;
+      if (released.y > point(candidate).y + 6 * scale) {
+        if (!digit.lowTop) return false;
+        candidate.low = true;
+        if (released.y > point(candidate).y + 6 * scale) return false;
+      }
       target = candidate; return true;
     });
     anchor = target;
