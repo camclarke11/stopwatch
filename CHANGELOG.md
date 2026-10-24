@@ -1,5 +1,9 @@
 # Releases
 
+## 1.0.11
+
+- Stewie can now rest on the lower dot of the colon, tucked in under the upper one. They sometimes hop there on their own, and dropping them between the two dots lands them on it.
+
 ## 1.0.10
 
 - The current task shown above the clock while the controls are faded is now quieter, at half opacity.
